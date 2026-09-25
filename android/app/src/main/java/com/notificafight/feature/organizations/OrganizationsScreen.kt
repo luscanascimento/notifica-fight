@@ -1,10 +1,5 @@
-package com.notificafight.feature.upcoming
+package com.notificafight.feature.organizations
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,45 +26,36 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.notificafight.R
-import com.notificafight.domain.model.CombatEvent
-import com.notificafight.ui.component.EventStatusLabel
+import com.notificafight.domain.model.Organization
 import com.notificafight.ui.theme.FightElevation
-import com.notificafight.ui.theme.FightMotion
 import com.notificafight.ui.theme.FightSpacing
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 @Composable
-fun UpcomingEventsRoute(
-    viewModel: UpcomingEventsViewModel,
-    onEventClick: (String) -> Unit,
-    onOrganizationsClick: () -> Unit,
+fun OrganizationsRoute(
+    viewModel: OrganizationsViewModel,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    UpcomingEventsScreen(
+    OrganizationsScreen(
         state = state,
+        onBack = onBack,
         onRetry = viewModel::retry,
-        onEventClick = onEventClick,
-        onOrganizationsClick = onOrganizationsClick,
         modifier = modifier,
     )
 }
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-fun UpcomingEventsScreen(
-    state: UpcomingEventsUiState,
+fun OrganizationsScreen(
+    state: OrganizationsUiState,
+    onBack: () -> Unit,
     onRetry: () -> Unit,
-    onEventClick: (String) -> Unit,
-    onOrganizationsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -79,13 +65,13 @@ fun UpcomingEventsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = stringResource(R.string.upcoming_events_title),
+                        text = stringResource(R.string.organizations_title),
                         style = MaterialTheme.typography.headlineSmall,
                     )
                 },
-                actions = {
-                    TextButton(onClick = onOrganizationsClick) {
-                        Text(stringResource(R.string.organizations_action))
+                navigationIcon = {
+                    TextButton(onClick = onBack) {
+                        Text(stringResource(R.string.back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -94,32 +80,21 @@ fun UpcomingEventsScreen(
             )
         },
     ) { contentPadding ->
-        AnimatedContent(
-            targetState = state,
-            transitionSpec = {
-                fadeIn(tween(FightMotion.standardMillis)) togetherWith
-                    fadeOut(tween(FightMotion.standardMillis))
-            },
-            contentKey = { it::class },
-            label = "upcoming-events-state",
-        ) { currentState ->
-            when (currentState) {
-                UpcomingEventsUiState.Loading -> LoadingState(
-                    modifier = Modifier.padding(contentPadding),
-                )
-                UpcomingEventsUiState.Empty -> EmptyState(
-                    modifier = Modifier.padding(contentPadding),
-                )
-                UpcomingEventsUiState.Error -> ErrorState(
-                    onRetry = onRetry,
-                    modifier = Modifier.padding(contentPadding),
-                )
-                is UpcomingEventsUiState.Success -> EventsList(
-                    state = currentState,
-                    onEventClick = onEventClick,
-                    contentPadding = contentPadding,
-                )
-            }
+        when (state) {
+            OrganizationsUiState.Loading -> LoadingState(
+                modifier = Modifier.padding(contentPadding),
+            )
+            OrganizationsUiState.Empty -> EmptyState(
+                modifier = Modifier.padding(contentPadding),
+            )
+            OrganizationsUiState.Error -> ErrorState(
+                onRetry = onRetry,
+                modifier = Modifier.padding(contentPadding),
+            )
+            is OrganizationsUiState.Success -> OrganizationsList(
+                state = state,
+                contentPadding = contentPadding,
+            )
         }
     }
 }
@@ -129,7 +104,7 @@ private fun LoadingState(modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
         Text(
-            text = stringResource(R.string.loading_events),
+            text = stringResource(R.string.loading_organizations),
             modifier = Modifier.padding(top = FightSpacing.xxxLarge),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -139,8 +114,8 @@ private fun LoadingState(modifier: Modifier = Modifier) {
 @Composable
 private fun EmptyState(modifier: Modifier = Modifier) {
     MessageState(
-        title = stringResource(R.string.empty_events_title),
-        body = stringResource(R.string.empty_events_body),
+        title = stringResource(R.string.empty_organizations_title),
+        body = stringResource(R.string.empty_organizations_body),
         modifier = modifier,
     )
 }
@@ -151,7 +126,7 @@ private fun ErrorState(
     modifier: Modifier = Modifier,
 ) {
     MessageState(
-        title = stringResource(R.string.error_events_title),
+        title = stringResource(R.string.error_organizations_title),
         body = stringResource(R.string.error_events_body),
         action = {
             Button(onClick = onRetry) {
@@ -191,9 +166,8 @@ private fun MessageState(
 }
 
 @Composable
-private fun EventsList(
-    state: UpcomingEventsUiState.Success,
-    onEventClick: (String) -> Unit,
+private fun OrganizationsList(
+    state: OrganizationsUiState.Success,
     contentPadding: PaddingValues,
 ) {
     LazyColumn(
@@ -221,60 +195,45 @@ private fun EventsList(
                 }
             }
         }
-        items(items = state.events, key = CombatEvent::id) { event ->
-            EventCard(event = event, onClick = { onEventClick(event.id) })
+        items(items = state.organizations, key = Organization::id) { organization ->
+            OrganizationCard(organization)
         }
     }
 }
 
 @Composable
-private fun EventCard(
-    event: CombatEvent,
-    onClick: () -> Unit,
-) {
-    val formatter = remember {
-        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
-            .withZone(ZoneId.systemDefault())
-    }
-    val location = listOfNotNull(event.city, event.countryCode).joinToString(", ")
-
+private fun OrganizationCard(organization: Organization) {
     Card(
-        onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = FightElevation.card),
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(FightSpacing.large),
+            horizontalArrangement = Arrangement.spacedBy(FightSpacing.large),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                shape = MaterialTheme.shapes.small,
             ) {
                 Text(
-                    text = event.organization.name.uppercase(),
-                    color = MaterialTheme.colorScheme.primary,
+                    text = organization.code.uppercase(),
+                    modifier = Modifier.padding(FightSpacing.medium),
                     style = MaterialTheme.typography.labelLarge,
                 )
-                EventStatusLabel(event.status)
             }
-            Spacer(Modifier.height(FightSpacing.medium))
-            Text(text = event.name, style = MaterialTheme.typography.titleLarge)
-            Spacer(Modifier.height(FightSpacing.small))
-            Text(
-                text = formatter.format(event.startTime),
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleMedium,
-            )
-            if (event.venueName != null || location.isNotEmpty()) {
-                Spacer(Modifier.height(FightSpacing.xSmall))
+            Column {
                 Text(
-                    text = listOfNotNull(event.venueName, location.takeIf(String::isNotEmpty))
-                        .joinToString(" · "),
+                    text = organization.name,
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                Text(
+                    text = organization.code.uppercase(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium,
                 )

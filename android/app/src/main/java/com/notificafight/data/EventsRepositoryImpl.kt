@@ -54,10 +54,8 @@ class EventsRepositoryImpl @Inject constructor(
 
 private fun RemoteEvent.toEntity(): EventEntity {
     UUID.fromString(id)
-    UUID.fromString(organization.id)
     require(name.isNotBlank()) { "Event name cannot be blank" }
-    require(organization.code.isNotBlank()) { "Organization code cannot be blank" }
-    require(organization.name.isNotBlank()) { "Organization name cannot be blank" }
+    organization.validate()
     val instant = Instant.parse(startTime)
     ZoneId.of(timezone)
     require(countryCode == null || countryCode.matches(Regex("^[A-Z]{2}$"))) {

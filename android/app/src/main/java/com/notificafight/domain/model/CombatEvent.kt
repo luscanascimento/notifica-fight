@@ -14,12 +14,6 @@ data class CombatEvent(
     val organization: Organization,
 )
 
-data class Organization(
-    val id: String,
-    val code: String,
-    val name: String,
-)
-
 enum class EventStatus {
     SCHEDULED,
     POSTPONED,

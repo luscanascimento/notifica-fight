@@ -5,7 +5,10 @@ import androidx.room.Room
 import com.notificafight.BuildConfig
 import com.notificafight.core.database.EventDao
 import com.notificafight.core.database.FightDatabase
+import com.notificafight.core.database.MIGRATION_1_2
+import com.notificafight.core.database.OrganizationDao
 import com.notificafight.core.network.EventApi
+import com.notificafight.core.network.OrganizationApi
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -25,10 +28,16 @@ object AppModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): FightDatabase =
-        Room.databaseBuilder(context, FightDatabase::class.java, "notifica-fight.db").build()
+        Room.databaseBuilder(context, FightDatabase::class.java, "notifica-fight.db")
+            .addMigrations(MIGRATION_1_2)
+            .build()
 
     @Provides
     fun provideEventDao(database: FightDatabase): EventDao = database.eventDao()
+
+    @Provides
+    fun provideOrganizationDao(database: FightDatabase): OrganizationDao =
+        database.organizationDao()
 
     @Provides
     @Singleton
@@ -40,7 +49,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideEventApi(client: OkHttpClient): EventApi {
+    fun provideRetrofit(client: OkHttpClient): Retrofit {
         require(BuildConfig.API_BASE_URL.endsWith('/')) { "API base URL must end with /" }
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
         return Retrofit.Builder()
@@ -48,6 +57,12 @@ object AppModule {
             .client(client)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
-            .create(EventApi::class.java)
     }
+
+    @Provides
+    fun provideEventApi(retrofit: Retrofit): EventApi = retrofit.create(EventApi::class.java)
+
+    @Provides
+    fun provideOrganizationApi(retrofit: Retrofit): OrganizationApi =
+        retrofit.create(OrganizationApi::class.java)
 }

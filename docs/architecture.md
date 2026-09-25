@@ -7,18 +7,19 @@ A primeira vertical slice entrega somente organizações e próximos eventos. Ev
 ```text
 PostgreSQL
     |
-Prisma -> EventsService -> GET /v1/events/upcoming
-                         -> GET /v1/events/:id
-                                  |
-                              Retrofit
-                                  |
-                              Repository
-                                  |
-                                Room
-                                  |
-                          ViewModel/StateFlow
-                                  |
-                               Compose
+Prisma -> Services -> GET /v1/events/upcoming
+                   -> GET /v1/events/:id
+                   -> GET /v1/organizations
+                              |
+                          Retrofit
+                              |
+                         Repositories
+                              |
+                            Room
+                              |
+                      ViewModel/StateFlow
+                              |
+                           Compose
 ```
 
 ## Backend
@@ -46,11 +47,14 @@ O endpoint de próximos eventos retorna no máximo 50 registros `SCHEDULED` ou `
 - `domain`: modelo consumido pela tela e boundary do repository;
 - `feature/upcoming`: estado, ViewModel e Compose;
 - `feature/details`: detalhe selecionado, refresh individual e fallback para o cache;
+- `feature/organizations`: catálogo de organizações com sincronização offline;
 - `ui/theme`: tokens e tema Material 3.
 
 A UI nunca chama Retrofit. O repository valida o payload, substitui atomicamente o pequeno cache da listagem e o Room notifica o ViewModel. Falha de rede não apaga dados já sincronizados.
 
 Ao selecionar um card, o app abre o detalhe e atualiza somente aquele evento pelo endpoint por ID. A resposta é validada e salva com upsert; se a rede falhar, o detalhe previamente armazenado continua visível com indicação de dados locais.
+
+A listagem de organizações possui cache próprio no Room. A migração da versão 1 para a versão 2 cria a nova tabela sem apagar os eventos previamente armazenados e aproveita os dados de organização já presentes nesse cache.
 
 Estados da tela:
 
@@ -61,4 +65,4 @@ Estados da tela:
 
 ## Próximos passos
 
-A ordem preservada é: Organizations, Fights/Card, admin básico e somente então primeiro provider e pipeline de ingestão. Worker/BullMQ e Redis entram quando existir job assíncrono real; FCM entra na etapa de registro de dispositivos e alertas.
+A ordem preservada é: Fights/Card, admin básico e somente então primeiro provider e pipeline de ingestão. Worker/BullMQ e Redis entram quando existir job assíncrono real; FCM entra na etapa de registro de dispositivos e alertas.

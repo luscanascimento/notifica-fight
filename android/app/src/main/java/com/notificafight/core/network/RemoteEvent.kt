@@ -11,9 +11,3 @@ data class RemoteEvent(
     val countryCode: String?,
     val organization: RemoteOrganization,
 )
-
-data class RemoteOrganization(
-    val id: String,
-    val code: String,
-    val name: String,
-)

@@ -8,6 +8,7 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { EventResponseDto } from "./dto/event-response.dto";
+import { FightResponseDto } from "./dto/fight-response.dto";
 import { EventsService } from "./events.service";
 
 @ApiTags("events")
@@ -20,6 +21,18 @@ export class EventsController {
   @ApiOkResponse({ type: EventResponseDto, isArray: true })
   findUpcoming(): Promise<EventResponseDto[]> {
     return this.eventsService.findUpcoming();
+  }
+
+  @Get(":id/card")
+  @ApiOperation({ summary: "List the ordered fight card for an event" })
+  @ApiParam({ name: "id", format: "uuid" })
+  @ApiOkResponse({ type: FightResponseDto, isArray: true })
+  @ApiBadRequestResponse({ description: "Invalid event ID" })
+  @ApiNotFoundResponse({ description: "Event not found" })
+  findCardByEventId(
+    @Param("id", new ParseUUIDPipe()) id: string,
+  ): Promise<FightResponseDto[]> {
+    return this.eventsService.findCardByEventId(id);
   }
 
   @Get(":id")

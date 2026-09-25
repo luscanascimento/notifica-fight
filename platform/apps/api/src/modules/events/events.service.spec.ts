@@ -1,5 +1,5 @@
 import { EventStatus } from "../../generated/prisma/enums";
-import type { Event, Organization } from "../../generated/prisma/client";
+import type { Event, Fight, Organization } from "../../generated/prisma/client";
 import type { PrismaService } from "../../infrastructure/database/prisma.service";
 import { EventsService } from "./events.service";
 
@@ -24,6 +24,17 @@ describe("EventsService", () => {
       createdAt: now,
       updatedAt: now,
     },
+  };
+  const fight: Fight = {
+    id: "01990000-0000-7000-8000-000000000201",
+    eventId: model.id,
+    cardPosition: 1,
+    redCornerName: "[DEV] Alex North",
+    blueCornerName: "[DEV] Jordan Vale",
+    weightClass: "Lightweight",
+    isTitleFight: true,
+    createdAt: now,
+    updatedAt: now,
   };
 
   it("returns only the mapped upcoming events in database order", async () => {
@@ -91,6 +102,39 @@ describe("EventsService", () => {
     const service = new EventsService(prisma);
 
     await expect(service.findById(model.id)).rejects.toMatchObject({
+      status: 404,
+      message: "Event not found",
+    });
+  });
+
+  it("returns a mapped fight card in database order", async () => {
+    const findUnique = jest.fn().mockResolvedValue({ fights: [fight] });
+    const prisma = { event: { findUnique } } as unknown as PrismaService;
+    const service = new EventsService(prisma);
+
+    await expect(service.findCardByEventId(model.id)).resolves.toEqual([
+      {
+        id: fight.id,
+        eventId: model.id,
+        cardPosition: 1,
+        redCornerName: "[DEV] Alex North",
+        blueCornerName: "[DEV] Jordan Vale",
+        weightClass: "Lightweight",
+        isTitleFight: true,
+      },
+    ]);
+    expect(findUnique).toHaveBeenCalledWith({
+      where: { id: model.id },
+      select: { fights: { orderBy: { cardPosition: "asc" } } },
+    });
+  });
+
+  it("throws not found when reading the card for an unknown event", async () => {
+    const findUnique = jest.fn().mockResolvedValue(null);
+    const prisma = { event: { findUnique } } as unknown as PrismaService;
+    const service = new EventsService(prisma);
+
+    await expect(service.findCardByEventId(model.id)).rejects.toMatchObject({
       status: 404,
       message: "Event not found",
     });

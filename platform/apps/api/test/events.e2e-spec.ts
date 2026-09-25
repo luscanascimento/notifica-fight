@@ -9,12 +9,16 @@ describe("Upcoming events endpoint", () => {
   let app: INestApplication;
   const findUpcoming = jest.fn();
   const findById = jest.fn();
+  const findCardByEventId = jest.fn();
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [EventsController],
       providers: [
-        { provide: EventsService, useValue: { findUpcoming, findById } },
+        {
+          provide: EventsService,
+          useValue: { findUpcoming, findById, findCardByEventId },
+        },
       ],
     }).compile();
 
@@ -28,6 +32,7 @@ describe("Upcoming events endpoint", () => {
   beforeEach(() => {
     findUpcoming.mockReset();
     findById.mockReset();
+    findCardByEventId.mockReset();
   });
 
   it("GET /v1/events/upcoming returns the public response contract", async () => {
@@ -110,6 +115,61 @@ describe("Upcoming events endpoint", () => {
 
     await request(server)
       .get("/v1/events/01990000-0000-7000-8000-000000000999")
+      .expect(404);
+  });
+
+  it("GET /v1/events/:id/card returns the ordered public contract", async () => {
+    const eventId = "01990000-0000-7000-8000-000000000101";
+    const fights = [
+      {
+        id: "01990000-0000-7000-8000-000000000201",
+        eventId,
+        cardPosition: 1,
+        redCornerName: "[DEV] Alex North",
+        blueCornerName: "[DEV] Jordan Vale",
+        weightClass: "Lightweight",
+        isTitleFight: true,
+      },
+    ];
+    findCardByEventId.mockResolvedValue(fights);
+
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+    const response = await request(server)
+      .get(`/v1/events/${eventId}/card`)
+      .expect(200);
+
+    expect(response.body).toEqual(fights);
+    expect(findCardByEventId).toHaveBeenCalledWith(eventId);
+  });
+
+  it("returns an empty card for an event without announced fights", async () => {
+    const eventId = "01990000-0000-7000-8000-000000000101";
+    findCardByEventId.mockResolvedValue([]);
+
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+    const response = await request(server)
+      .get(`/v1/events/${eventId}/card`)
+      .expect(200);
+
+    expect(response.body).toEqual([]);
+  });
+
+  it("rejects an invalid event ID when reading a card", async () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server).get("/v1/events/not-a-uuid/card").expect(400);
+
+    expect(findCardByEventId).not.toHaveBeenCalled();
+  });
+
+  it("returns not found when the card event does not exist", async () => {
+    findCardByEventId.mockRejectedValue(
+      new NotFoundException("Event not found"),
+    );
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server)
+      .get("/v1/events/01990000-0000-7000-8000-000000000999/card")
       .expect(404);
   });
 });

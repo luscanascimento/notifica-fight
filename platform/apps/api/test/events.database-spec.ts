@@ -40,4 +40,32 @@ describe("Upcoming events database integration", () => {
       organization: { code: "UFC" },
     });
   });
+
+  it("reads a seeded event card in display order", async () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+    const response = await request(server)
+      .get("/v1/events/01990000-0000-7000-8000-000000000101/card")
+      .expect(200);
+
+    expect(response.body).toEqual([
+      {
+        id: "01990000-0000-7000-8000-000000000201",
+        eventId: "01990000-0000-7000-8000-000000000101",
+        cardPosition: 1,
+        redCornerName: "[DEV] Alex North",
+        blueCornerName: "[DEV] Jordan Vale",
+        weightClass: "Lightweight",
+        isTitleFight: true,
+      },
+      {
+        id: "01990000-0000-7000-8000-000000000202",
+        eventId: "01990000-0000-7000-8000-000000000101",
+        cardPosition: 2,
+        redCornerName: "[DEV] Casey Stone",
+        blueCornerName: "[DEV] Morgan Reed",
+        weightClass: "Welterweight",
+        isTitleFight: false,
+      },
+    ]);
+  });
 });

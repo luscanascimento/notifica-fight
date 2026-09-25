@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { EventStatus } from "../../generated/prisma/enums";
 import { PrismaService } from "../../infrastructure/database/prisma.service";
 import { EventResponseDto } from "./dto/event-response.dto";
+import { FightResponseDto } from "./dto/fight-response.dto";
 
 @Injectable()
 export class EventsService {
@@ -18,6 +19,21 @@ export class EventsService {
     }
 
     return EventResponseDto.fromModel(event);
+  }
+
+  async findCardByEventId(id: string): Promise<FightResponseDto[]> {
+    const event = await this.prisma.event.findUnique({
+      where: { id },
+      select: {
+        fights: { orderBy: { cardPosition: "asc" } },
+      },
+    });
+
+    if (!event) {
+      throw new NotFoundException("Event not found");
+    }
+
+    return event.fights.map((fight) => FightResponseDto.fromModel(fight));
   }
 
   async findUpcoming(now: Date = new Date()): Promise<EventResponseDto[]> {

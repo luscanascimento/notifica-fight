@@ -63,6 +63,45 @@ const developmentEvents = [
   },
 ] as const;
 
+const developmentFights = [
+  {
+    id: "01990000-0000-7000-8000-000000000201",
+    eventId: developmentEvents[0].id,
+    cardPosition: 1,
+    redCornerName: "[DEV] Alex North",
+    blueCornerName: "[DEV] Jordan Vale",
+    weightClass: "Lightweight",
+    isTitleFight: true,
+  },
+  {
+    id: "01990000-0000-7000-8000-000000000202",
+    eventId: developmentEvents[0].id,
+    cardPosition: 2,
+    redCornerName: "[DEV] Casey Stone",
+    blueCornerName: "[DEV] Morgan Reed",
+    weightClass: "Welterweight",
+    isTitleFight: false,
+  },
+  {
+    id: "01990000-0000-7000-8000-000000000203",
+    eventId: developmentEvents[1].id,
+    cardPosition: 1,
+    redCornerName: "[DEV] Ari Santos",
+    blueCornerName: "[DEV] Robin Park",
+    weightClass: null,
+    isTitleFight: false,
+  },
+  {
+    id: "01990000-0000-7000-8000-000000000204",
+    eventId: developmentEvents[2].id,
+    cardPosition: 1,
+    redCornerName: "[DEV] Niran Chai",
+    blueCornerName: "[DEV] Mali Arun",
+    weightClass: "Featherweight",
+    isTitleFight: false,
+  },
+] as const;
+
 async function seed(): Promise<void> {
   for (const organization of organizations) {
     await prisma.organization.upsert({
@@ -77,6 +116,13 @@ async function seed(): Promise<void> {
       where: { id: event.id },
       update: event,
       create: event,
+    });
+  }
+  for (const fight of developmentFights) {
+    await prisma.fight.upsert({
+      where: { id: fight.id },
+      update: fight,
+      create: fight,
     });
   }
 }

@@ -47,6 +47,7 @@ curl http://localhost:3000/v1/health
 curl http://localhost:3000/v1/organizations
 curl http://localhost:3000/v1/events/upcoming
 curl http://localhost:3000/v1/events/01990000-0000-7000-8000-000000000101
+curl http://localhost:3000/v1/events/01990000-0000-7000-8000-000000000101/card
 ```
 
 Swagger fica disponível em `http://localhost:3000/docs` no ambiente de desenvolvimento. Os seeds usam o prefixo `[DEV]` e não representam eventos reais.

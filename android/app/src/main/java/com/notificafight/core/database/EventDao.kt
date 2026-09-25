@@ -1,10 +1,9 @@
 package com.notificafight.core.database
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -22,18 +21,41 @@ interface EventDao {
     @Query("SELECT * FROM events WHERE id = :id")
     fun observeById(id: String): Flow<EventEntity?>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(events: List<EventEntity>)
+    @Query("SELECT * FROM fights WHERE eventId = :eventId ORDER BY cardPosition ASC")
+    fun observeCard(eventId: String): Flow<List<FightEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(event: EventEntity)
+    @Upsert
+    suspend fun upsertAll(events: List<EventEntity>)
+
+    @Upsert
+    suspend fun upsert(event: EventEntity)
+
+    @Upsert
+    suspend fun upsertFights(fights: List<FightEntity>)
 
     @Query("DELETE FROM events")
     suspend fun deleteAll()
 
+    @Query("DELETE FROM events WHERE id NOT IN (:eventIds)")
+    suspend fun deleteEventsNotIn(eventIds: List<String>)
+
+    @Query("DELETE FROM fights WHERE eventId = :eventId")
+    suspend fun deleteCard(eventId: String)
+
     @Transaction
-    suspend fun replaceAll(events: List<EventEntity>) {
-        deleteAll()
-        insertAll(events)
+    suspend fun replaceUpcoming(events: List<EventEntity>) {
+        if (events.isEmpty()) {
+            deleteAll()
+        } else {
+            upsertAll(events)
+            deleteEventsNotIn(events.map(EventEntity::id))
+        }
+    }
+
+    @Transaction
+    suspend fun replaceEventDetails(event: EventEntity, fights: List<FightEntity>) {
+        upsert(event)
+        deleteCard(event.id)
+        upsertFights(fights)
     }
 }

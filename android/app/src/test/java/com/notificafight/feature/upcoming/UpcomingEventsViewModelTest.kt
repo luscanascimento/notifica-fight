@@ -4,6 +4,7 @@ import com.notificafight.MainDispatcherRule
 import com.notificafight.domain.model.EventStatus
 import com.notificafight.domain.model.Organization
 import com.notificafight.domain.model.CombatEvent
+import com.notificafight.domain.model.CombatFight
 import com.notificafight.domain.repository.EventsRepository
 import java.io.IOException
 import java.time.Instant
@@ -90,6 +91,9 @@ private class FakeRepository(
 
     override fun observeEvent(id: String): Flow<CombatEvent?> =
         MutableStateFlow(events.value.find { it.id == id })
+
+    override fun observeEventCard(eventId: String): Flow<List<CombatFight>> =
+        MutableStateFlow(emptyList())
 
     override suspend fun refreshUpcoming(): Result<Unit> {
         eventsAfterRefresh?.let { events.value = it }

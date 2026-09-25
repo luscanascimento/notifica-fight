@@ -2,8 +2,10 @@ package com.notificafight.data
 
 import com.notificafight.core.database.EventDao
 import com.notificafight.core.database.EventEntity
+import com.notificafight.core.database.FightEntity
 import com.notificafight.core.network.EventApi
 import com.notificafight.core.network.RemoteEvent
+import com.notificafight.core.network.RemoteFight
 import com.notificafight.core.network.RemoteOrganization
 import com.notificafight.domain.model.EventStatus
 import kotlinx.coroutines.flow.Flow
@@ -57,6 +59,18 @@ class EventsRepositoryImplTest {
     }
 
     @Test
+    fun `upcoming refresh preserves card for an event that remains listed`() = runTest {
+        val event = remoteEvent().toEntityForTest()
+        val fight = remoteFight(event.id).toEntityForTest()
+        val dao = FakeEventDao(listOf(event), listOf(fight))
+        val repository = EventsRepositoryImpl(FakeEventApi(listOf(remoteEvent())), dao)
+
+        assertTrue(repository.refreshUpcoming().isSuccess)
+
+        assertEquals(listOf(fight), dao.fights.value)
+    }
+
+    @Test
     fun `refresh event validates and stores the requested event without clearing cache`() = runTest {
         val existing = remoteEvent().copy(
             id = "01990000-0000-7000-8000-000000000100",
@@ -70,6 +84,10 @@ class EventsRepositoryImplTest {
 
         assertEquals(2, dao.events.value.size)
         assertEquals(requested.name, repository.observeEvent(requested.id).first()?.name)
+        assertEquals(
+            "[DEV] Alex North",
+            repository.observeEventCard(requested.id).first().single().redCornerName,
+        )
     }
 
     @Test
@@ -92,34 +110,78 @@ class EventsRepositoryImplTest {
         assertTrue(repository.refreshEvent(finished.id).isSuccess)
         assertEquals(EventStatus.FINISHED, repository.observeEvent(finished.id).first()?.status)
     }
+
+    @Test
+    fun `invalid card fails without changing cached event details`() = runTest {
+        val event = remoteEvent().toEntityForTest()
+        val fight = remoteFight(event.id).toEntityForTest()
+        val dao = FakeEventDao(listOf(event), listOf(fight))
+        val invalidFight = remoteFight(event.id).copy(cardPosition = 0)
+        val repository = EventsRepositoryImpl(
+            FakeEventApi(listOf(remoteEvent()), listOf(invalidFight)),
+            dao,
+        )
+
+        assertTrue(repository.refreshEvent(event.id).isFailure)
+        assertEquals(listOf(event), dao.events.value)
+        assertEquals(listOf(fight), dao.fights.value)
+    }
 }
 
 private class FakeEventApi(
     private val response: List<RemoteEvent>,
+    private val cardResponse: List<RemoteFight> = listOf(remoteFight(response.single().id)),
 ) : EventApi {
     override suspend fun getUpcomingEvents(): List<RemoteEvent> = response
 
     override suspend fun getEvent(id: String): RemoteEvent = response.single()
+
+    override suspend fun getEventCard(id: String): List<RemoteFight> = cardResponse
 }
 
-private class FakeEventDao(initial: List<EventEntity> = emptyList()) : EventDao {
+private class FakeEventDao(
+    initial: List<EventEntity> = emptyList(),
+    initialFights: List<FightEntity> = emptyList(),
+) : EventDao {
     val events = MutableStateFlow(initial)
+    val fights = MutableStateFlow(initialFights)
 
     override fun observeUpcoming(nowEpochMillis: Long): Flow<List<EventEntity>> = events
 
     override fun observeById(id: String): Flow<EventEntity?> =
         events.map { cached -> cached.find { it.id == id } }
 
-    override suspend fun insertAll(events: List<EventEntity>) {
-        this.events.value = events
+    override fun observeCard(eventId: String): Flow<List<FightEntity>> =
+        fights.map { cached ->
+            cached.filter { it.eventId == eventId }.sortedBy(FightEntity::cardPosition)
+        }
+
+    override suspend fun upsertAll(events: List<EventEntity>) {
+        val ids = events.mapTo(mutableSetOf(), EventEntity::id)
+        this.events.value = this.events.value.filterNot { it.id in ids } + events
     }
 
-    override suspend fun insert(event: EventEntity) {
+    override suspend fun upsert(event: EventEntity) {
         events.value = events.value.filterNot { it.id == event.id } + event
+    }
+
+    override suspend fun upsertFights(fights: List<FightEntity>) {
+        val ids = fights.mapTo(mutableSetOf(), FightEntity::id)
+        this.fights.value = this.fights.value.filterNot { it.id in ids } + fights
     }
 
     override suspend fun deleteAll() {
         events.value = emptyList()
+        fights.value = emptyList()
+    }
+
+    override suspend fun deleteEventsNotIn(eventIds: List<String>) {
+        events.value = events.value.filter { it.id in eventIds }
+        fights.value = fights.value.filter { it.eventId in eventIds }
+    }
+
+    override suspend fun deleteCard(eventId: String) {
+        fights.value = fights.value.filterNot { it.eventId == eventId }
     }
 }
 
@@ -139,6 +201,16 @@ private fun remoteEvent() = RemoteEvent(
     ),
 )
 
+private fun remoteFight(eventId: String) = RemoteFight(
+    id = "01990000-0000-7000-8000-000000000201",
+    eventId = eventId,
+    cardPosition = 1,
+    redCornerName = "[DEV] Alex North",
+    blueCornerName = "[DEV] Jordan Vale",
+    weightClass = "Lightweight",
+    isTitleFight = true,
+)
+
 private fun RemoteEvent.toEntityForTest() = EventEntity(
     id = id,
     name = name,
@@ -151,4 +223,14 @@ private fun RemoteEvent.toEntityForTest() = EventEntity(
     organizationId = organization.id,
     organizationCode = organization.code,
     organizationName = organization.name,
+)
+
+private fun RemoteFight.toEntityForTest() = FightEntity(
+    id = id,
+    eventId = eventId,
+    cardPosition = cardPosition,
+    redCornerName = redCornerName,
+    blueCornerName = blueCornerName,
+    weightClass = weightClass,
+    isTitleFight = isTitleFight,
 )

@@ -2,7 +2,7 @@
 
 ## Estado atual
 
-Não há integração externa nesta vertical slice. Os três eventos do seed são fixtures fictícias e possuem o prefixo `[DEV]`. UFC, ONE Championship e RWS são cadastradas apenas como organizações do MVP; nenhuma informação factual de agenda foi inventada.
+Não há integração externa nesta vertical slice. Os três eventos e os nomes dos participantes nos cards do seed são fixtures fictícias e possuem o prefixo `[DEV]`. UFC, ONE Championship e RWS são cadastradas apenas como organizações do MVP; nenhuma informação factual de agenda ou card foi inventada.
 
 Essa escolha valida o fluxo ponta a ponta antes de assumir custo operacional, contrato ou risco jurídico de um provider.
 

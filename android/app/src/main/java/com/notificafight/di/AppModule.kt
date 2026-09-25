@@ -6,6 +6,7 @@ import com.notificafight.BuildConfig
 import com.notificafight.core.database.EventDao
 import com.notificafight.core.database.FightDatabase
 import com.notificafight.core.database.MIGRATION_1_2
+import com.notificafight.core.database.MIGRATION_2_3
 import com.notificafight.core.database.OrganizationDao
 import com.notificafight.core.network.EventApi
 import com.notificafight.core.network.OrganizationApi
@@ -29,7 +30,7 @@ object AppModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): FightDatabase =
         Room.databaseBuilder(context, FightDatabase::class.java, "notifica-fight.db")
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
 
     @Provides

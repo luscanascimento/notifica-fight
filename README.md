@@ -1,6 +1,6 @@
 # Notifica Fight
 
-Aplicativo Android para consultar eventos de esportes de combate. A primeira entrega é uma vertical slice pequena e funcional de **próximos eventos**, com dados fictícios de desenvolvimento:
+Aplicativo Android para consultar eventos e cards de esportes de combate. A entrega atual é uma vertical slice pequena e funcional de **próximos eventos**, com dados fictícios de desenvolvimento:
 
 `PostgreSQL -> NestJS -> REST -> Android -> Room -> ViewModel -> Compose`
 
@@ -69,7 +69,7 @@ cd android
 ./gradlew assembleRelease -PNOTIFICA_API_BASE_URL=https://api.example.com/
 ```
 
-O Room persiste cada sincronização bem-sucedida. Um toque no card abre o detalhe e atualiza somente o evento selecionado; a ação **Organizações** abre o catálogo sincronizado. Se a API estiver indisponível em uma abertura posterior, as listas e o detalhe continuam exibindo os dados salvos e informam que os dados são locais. Se não houver cache, a tela exibe o estado de erro com ação de tentar novamente.
+O Room persiste cada sincronização bem-sucedida. Um toque no evento abre o detalhe e seu card de lutas; a ação **Organizações** abre o catálogo sincronizado. Se a API estiver indisponível em uma abertura posterior, as listas, o detalhe e o card continuam exibindo os dados salvos e informam que os dados são locais. Se não houver cache, a tela exibe o estado de erro com ação de tentar novamente.
 
 ## Testes e checks
 

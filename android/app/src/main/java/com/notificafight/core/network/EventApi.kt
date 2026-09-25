@@ -9,4 +9,7 @@ interface EventApi {
 
     @GET("v1/events/{id}")
     suspend fun getEvent(@Path("id") id: String): RemoteEvent
+
+    @GET("v1/events/{id}/card")
+    suspend fun getEventCard(@Path("id") id: String): List<RemoteFight>
 }

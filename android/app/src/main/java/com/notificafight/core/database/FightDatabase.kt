@@ -4,8 +4,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [EventEntity::class, OrganizationEntity::class],
-    version = 2,
+    entities = [EventEntity::class, FightEntity::class, OrganizationEntity::class],
+    version = 3,
     exportSchema = true,
 )
 abstract class FightDatabase : RoomDatabase() {

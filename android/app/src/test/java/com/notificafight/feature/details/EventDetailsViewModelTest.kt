@@ -4,6 +4,7 @@ import com.notificafight.MainDispatcherRule
 import com.notificafight.domain.model.EventStatus
 import com.notificafight.domain.model.Organization
 import com.notificafight.domain.model.CombatEvent
+import com.notificafight.domain.model.CombatFight
 import com.notificafight.domain.repository.EventsRepository
 import java.io.IOException
 import java.time.Instant
@@ -24,9 +25,11 @@ class EventDetailsViewModelTest {
     @Test
     fun `shows refreshed event`() = runTest {
         val event = sampleEvent()
+        val fight = sampleFight()
         val repository = FakeDetailsRepository(
             refreshResult = Result.success(Unit),
             eventAfterRefresh = event,
+            fightsAfterRefresh = listOf(fight),
         )
         val viewModel = EventDetailsViewModel(repository)
 
@@ -34,7 +37,11 @@ class EventDetailsViewModelTest {
         advanceUntilIdle()
 
         assertEquals(
-            EventDetailsUiState.Success(event, showingCachedData = false),
+            EventDetailsUiState.Success(
+                event = event,
+                fights = listOf(fight),
+                showingCachedData = false,
+            ),
             viewModel.uiState.value,
         )
     }
@@ -42,8 +49,10 @@ class EventDetailsViewModelTest {
     @Test
     fun `keeps cached event visible when refresh fails`() = runTest {
         val event = sampleEvent()
+        val fight = sampleFight()
         val repository = FakeDetailsRepository(
             initialEvent = event,
+            initialFights = listOf(fight),
             refreshResult = Result.failure(IOException("offline")),
         )
         val viewModel = EventDetailsViewModel(repository)
@@ -52,7 +61,11 @@ class EventDetailsViewModelTest {
         advanceUntilIdle()
 
         assertEquals(
-            EventDetailsUiState.Success(event, showingCachedData = true),
+            EventDetailsUiState.Success(
+                event = event,
+                fights = listOf(fight),
+                showingCachedData = true,
+            ),
             viewModel.uiState.value,
         )
     }
@@ -73,19 +86,25 @@ class EventDetailsViewModelTest {
 
 private class FakeDetailsRepository(
     initialEvent: CombatEvent? = null,
+    initialFights: List<CombatFight> = emptyList(),
     private val refreshResult: Result<Unit>,
     private val eventAfterRefresh: CombatEvent? = null,
+    private val fightsAfterRefresh: List<CombatFight>? = null,
 ) : EventsRepository {
     private val event = MutableStateFlow(initialEvent)
+    private val fights = MutableStateFlow(initialFights)
 
     override fun observeUpcomingEvents(): Flow<List<CombatEvent>> = MutableStateFlow(emptyList())
 
     override fun observeEvent(id: String): Flow<CombatEvent?> = event
 
+    override fun observeEventCard(eventId: String): Flow<List<CombatFight>> = fights
+
     override suspend fun refreshUpcoming(): Result<Unit> = Result.success(Unit)
 
     override suspend fun refreshEvent(id: String): Result<Unit> {
         eventAfterRefresh?.let { event.value = it }
+        fightsAfterRefresh?.let { fights.value = it }
         return refreshResult
     }
 }
@@ -104,4 +123,14 @@ private fun sampleEvent() = CombatEvent(
         code = "UFC",
         name = "UFC",
     ),
+)
+
+private fun sampleFight() = CombatFight(
+    id = "01990000-0000-7000-8000-000000000201",
+    eventId = "01990000-0000-7000-8000-000000000101",
+    cardPosition = 1,
+    redCornerName = "[DEV] Alex North",
+    blueCornerName = "[DEV] Jordan Vale",
+    weightClass = "Lightweight",
+    isTitleFight = true,
 )

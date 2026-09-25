@@ -23,12 +23,16 @@ const organizations = [
   { id: "01990000-0000-7000-8000-000000000003", code: "RWS", name: "RWS" },
 ] as const;
 
+function daysFromNow(days: number): Date {
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1_000);
+}
+
 const developmentEvents = [
   {
     id: "01990000-0000-7000-8000-000000000101",
     organizationId: organizations[0].id,
     name: "[DEV] UFC Example Event",
-    startTime: new Date("2030-01-12T23:00:00.000Z"),
+    startTime: daysFromNow(30),
     timezone: "America/New_York",
     status: EventStatus.SCHEDULED,
     venueName: "Development Arena",
@@ -39,7 +43,7 @@ const developmentEvents = [
     id: "01990000-0000-7000-8000-000000000102",
     organizationId: organizations[1].id,
     name: "[DEV] ONE Example Event",
-    startTime: new Date("2030-02-08T12:00:00.000Z"),
+    startTime: daysFromNow(60),
     timezone: "Asia/Singapore",
     status: EventStatus.SCHEDULED,
     venueName: null,
@@ -50,7 +54,7 @@ const developmentEvents = [
     id: "01990000-0000-7000-8000-000000000103",
     organizationId: organizations[2].id,
     name: "[DEV] RWS Example Event",
-    startTime: new Date("2030-03-09T12:00:00.000Z"),
+    startTime: daysFromNow(90),
     timezone: "Asia/Bangkok",
     status: EventStatus.SCHEDULED,
     venueName: "Development Stadium",

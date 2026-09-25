@@ -1,0 +1,45 @@
+# Segurança
+
+## Controles implementados
+
+### API
+
+- variáveis de ambiente validadas no boot;
+- DTOs explícitos e `ValidationPipe` global com whitelist e rejeição de campos extras;
+- headers de segurança com Helmet;
+- CORS deny-by-default, liberado somente para origins configuradas;
+- limite de payload de 100 KiB;
+- rate limit global simples de 100 requisições por minuto por cliente;
+- erros 5xx sem stack trace, SQL ou detalhes de infraestrutura na resposta;
+- logs JSON via Pino, request ID gerado pelo servidor e redaction de authorization, cookies e tokens;
+- PostgreSQL e Redis publicados somente em `127.0.0.1` no Compose;
+- dependências fixadas por lockfile e auditoria pnpm sem vulnerabilidades conhecidas na entrega.
+
+### Android
+
+- nenhuma credencial ou API key privada no APK;
+- endpoint configurável por build environment;
+- release aceita somente URL base HTTPS e bloqueia cleartext no manifest;
+- debug libera HTTP apenas para `10.0.2.2`, usado pelo emulador local;
+- sem logging HTTP, evitando vazamento futuro de tokens ou payloads;
+- Room usa armazenamento privado do app;
+- backup e transferência dos dados do app estão desabilitados;
+- payload remoto é tratado como não confiável e validado antes de substituir o cache.
+
+## Limites atuais
+
+Os endpoints de conteúdo são públicos e read-only. Não existe autenticação de usuário porque ela não é necessária no MVP. Operações administrativas ainda não existem; quando forem criadas, ficarão sob `/v1/admin`, com OIDC, MFA no identity provider, RBAC server-side deny-by-default e audit log append-only.
+
+TLS é responsabilidade do edge/reverse proxy em produção, mas autorização nunca dependerá do proxy. PostgreSQL e Redis não devem receber exposição pública. As credenciais em `docker-compose.yml` são exclusivamente locais e devem ser substituídas por secret management em qualquer ambiente implantado.
+
+FCM, device registration, deep links e App Check ainda não estão implementados. Ao entrarem no escopo, tokens FCM serão dados operacionais sensíveis, nunca serão logados e terão atualização/invalidação explícitas.
+
+## Checklist de implantação futura
+
+- definir URL e certificado TLS reais;
+- provisionar roles PostgreSQL separadas para runtime e migrations;
+- configurar secrets fora da imagem e do repositório;
+- restringir rede de PostgreSQL/Redis;
+- configurar WAF/rate limiting no edge sem remover os controles da API;
+- desabilitar Swagger público ou protegê-lo conforme o ambiente;
+- executar lint, testes, build, auditoria de dependências e secret scan no CI.

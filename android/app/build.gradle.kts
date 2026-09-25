@@ -10,6 +10,16 @@ plugins {
 val releaseApiBaseUrl = providers.gradleProperty("NOTIFICA_API_BASE_URL")
     .orElse("https://api.example.invalid/")
     .get()
+val debugApiBaseUrl = providers.gradleProperty("NOTIFICA_DEBUG_API_BASE_URL")
+    .orElse("http://10.0.2.2:3000/")
+    .get()
+
+require(releaseApiBaseUrl.startsWith("https://") && releaseApiBaseUrl.endsWith('/')) {
+    "NOTIFICA_API_BASE_URL must be an HTTPS URL ending with /"
+}
+require(debugApiBaseUrl.endsWith('/')) {
+    "NOTIFICA_DEBUG_API_BASE_URL must end with /"
+}
 
 android {
     namespace = "com.notificafight"
@@ -27,7 +37,7 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/\"")
+            buildConfigField("String", "API_BASE_URL", "\"$debugApiBaseUrl\"")
         }
         release {
             isMinifyEnabled = true

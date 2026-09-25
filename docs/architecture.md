@@ -33,7 +33,7 @@ Prisma -> EventsService -> GET /v1/events/upcoming
 
 Os módulos acessam Prisma diretamente porque as consultas atuais são simples. Uma port/repository só será criada quando regras de domínio, substituição de implementação ou testes justificarem a boundary.
 
-O endpoint de eventos retorna no máximo 50 registros `SCHEDULED` ou `POSTPONED`, em ordem cronológica. O contrato é mapeado para DTO e não expõe diretamente o modelo Prisma.
+O endpoint de próximos eventos retorna no máximo 50 registros `SCHEDULED` ou `POSTPONED`, em ordem cronológica. O detalhe por ID reutiliza o mesmo contrato público, valida o UUID e retorna 404 quando o evento não existe. Os contratos são mapeados para DTO e não expõem diretamente o modelo Prisma.
 
 ## Android
 

@@ -27,4 +27,17 @@ describe("Upcoming events database integration", () => {
     expect(JSON.stringify(body)).toContain('"name":"[DEV] ');
     expect(JSON.stringify(body)).toContain('"code":"UFC"');
   });
+
+  it("reads a seeded event by ID", async () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+    const response = await request(server)
+      .get("/v1/events/01990000-0000-7000-8000-000000000101")
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      id: "01990000-0000-7000-8000-000000000101",
+      name: "[DEV] UFC Example Event",
+      organization: { code: "UFC" },
+    });
+  });
 });

@@ -24,6 +24,8 @@ O código está no mesmo repositório de bootstrap por haver um único remoto fo
 - Android SDK 37.0 e Android Studio compatível com AGP 9.4.
 
 No WSL 2, habilite a integração da distribuição em **Docker Desktop > Settings > Resources > WSL Integration**.
+Se a porta PostgreSQL padrão estiver ocupada no Windows, execute o Compose com
+`POSTGRES_PORT=55432` e ajuste a porta de `DATABASE_URL` no `.env` para `55432`.
 
 ## Executar a API
 

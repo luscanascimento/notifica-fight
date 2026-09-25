@@ -1,0 +1,18 @@
+{
+  "name": "notifica-fight",
+  "private": true,
+  "packageManager": "pnpm@10.2.0",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "pnpm --filter @notifica-fight/api build",
+    "dev": "pnpm --filter @notifica-fight/api dev",
+    "lint": "pnpm --filter @notifica-fight/api lint",
+    "test": "pnpm --filter @notifica-fight/api test",
+    "typecheck": "pnpm --filter @notifica-fight/api typecheck",
+    "db:generate": "pnpm --filter @notifica-fight/api db:generate",
+    "db:migrate": "pnpm --filter @notifica-fight/api db:migrate",
+    "db:seed": "pnpm --filter @notifica-fight/api db:seed"
+  }
+}

@@ -1,0 +1,27 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+platform/apps/api/src/generated/
+
+# Android / Gradle
+.gradle/
+build/
+local.properties
+*.apk
+*.aab
+captures/
+.cxx/
+
+# IDE and OS
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+*.log

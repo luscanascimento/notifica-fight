@@ -44,6 +44,7 @@ Verificações rápidas:
 
 ```bash
 curl http://localhost:3000/v1/health
+curl http://localhost:3000/v1/organizations
 curl http://localhost:3000/v1/events/upcoming
 curl http://localhost:3000/v1/events/01990000-0000-7000-8000-000000000101
 ```

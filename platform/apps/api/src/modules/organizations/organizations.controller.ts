@@ -1,5 +1,5 @@
 import { Controller, Get } from "@nestjs/common";
-import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { OrganizationResponseDto } from "./dto/organization-response.dto";
 import { OrganizationsService } from "./organizations.service";
 
@@ -9,6 +9,7 @@ export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
 
   @Get()
+  @ApiOperation({ summary: "List combat-sports organizations" })
   @ApiOkResponse({ type: OrganizationResponseDto, isArray: true })
   findAll(): Promise<OrganizationResponseDto[]> {
     return this.organizationsService.findAll();

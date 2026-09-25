@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Notifica Fight</string>
+    <string name="upcoming_events_title">Próximos eventos</string>
+    <string name="loading_events">Carregando eventos</string>
+    <string name="empty_events_title">Nenhum evento futuro</string>
+    <string name="empty_events_body">Novos eventos aparecerão aqui quando forem publicados.</string>
+    <string name="error_events_title">Não foi possível carregar</string>
+    <string name="error_events_body">Verifique sua conexão e tente novamente.</string>
+    <string name="retry">Tentar novamente</string>
+    <string name="offline_data">Sem conexão — exibindo dados salvos</string>
+    <string name="event_status_scheduled">Em breve</string>
+    <string name="event_status_postponed">Adiado</string>
+</resources>

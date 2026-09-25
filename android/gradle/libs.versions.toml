@@ -2,7 +2,7 @@
 agp = "9.4.1"
 compose-bom = "2026.09.00"
 compose-compiler = "2.4.20"
-ksp = "2.3.10"
+ksp = "2.3.12"
 hilt = "2.60.1"
 core-ktx = "1.19.1"
 activity-compose = "1.13.0"

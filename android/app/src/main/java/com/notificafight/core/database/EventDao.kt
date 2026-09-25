@@ -19,8 +19,14 @@ interface EventDao {
     )
     fun observeUpcoming(nowEpochMillis: Long): Flow<List<EventEntity>>
 
+    @Query("SELECT * FROM events WHERE id = :id")
+    fun observeById(id: String): Flow<EventEntity?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(events: List<EventEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(event: EventEntity)
 
     @Query("DELETE FROM events")
     suspend fun deleteAll()

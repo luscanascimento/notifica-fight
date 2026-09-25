@@ -3,8 +3,8 @@ package com.notificafight.feature.upcoming
 import com.notificafight.MainDispatcherRule
 import com.notificafight.domain.model.EventStatus
 import com.notificafight.domain.model.Organization
-import com.notificafight.domain.model.UpcomingEvent
-import com.notificafight.domain.repository.UpcomingEventsRepository
+import com.notificafight.domain.model.CombatEvent
+import com.notificafight.domain.repository.EventsRepository
 import java.io.IOException
 import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -80,21 +80,26 @@ class UpcomingEventsViewModelTest {
 }
 
 private class FakeRepository(
-    initialEvents: List<UpcomingEvent> = emptyList(),
+    initialEvents: List<CombatEvent> = emptyList(),
     private val refreshResult: Result<Unit>,
-    private val eventsAfterRefresh: List<UpcomingEvent>? = null,
-) : UpcomingEventsRepository {
+    private val eventsAfterRefresh: List<CombatEvent>? = null,
+) : EventsRepository {
     private val events = MutableStateFlow(initialEvents)
 
-    override fun observeUpcomingEvents(): Flow<List<UpcomingEvent>> = events
+    override fun observeUpcomingEvents(): Flow<List<CombatEvent>> = events
 
-    override suspend fun refresh(): Result<Unit> {
+    override fun observeEvent(id: String): Flow<CombatEvent?> =
+        MutableStateFlow(events.value.find { it.id == id })
+
+    override suspend fun refreshUpcoming(): Result<Unit> {
         eventsAfterRefresh?.let { events.value = it }
         return refreshResult
     }
+
+    override suspend fun refreshEvent(id: String): Result<Unit> = refreshResult
 }
 
-private fun sampleEvent() = UpcomingEvent(
+private fun sampleEvent() = CombatEvent(
     id = "01990000-0000-7000-8000-000000000101",
     name = "[DEV] Example Event",
     startTime = Instant.parse("2030-01-12T23:00:00Z"),

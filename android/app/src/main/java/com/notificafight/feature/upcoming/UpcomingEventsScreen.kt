@@ -36,8 +36,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.notificafight.R
-import com.notificafight.domain.model.EventStatus
-import com.notificafight.domain.model.UpcomingEvent
+import com.notificafight.domain.model.CombatEvent
+import com.notificafight.ui.component.EventStatusLabel
 import com.notificafight.ui.theme.FightElevation
 import com.notificafight.ui.theme.FightMotion
 import com.notificafight.ui.theme.FightSpacing
@@ -48,12 +48,14 @@ import java.time.format.FormatStyle
 @Composable
 fun UpcomingEventsRoute(
     viewModel: UpcomingEventsViewModel,
+    onEventClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     UpcomingEventsScreen(
         state = state,
         onRetry = viewModel::retry,
+        onEventClick = onEventClick,
         modifier = modifier,
     )
 }
@@ -63,6 +65,7 @@ fun UpcomingEventsRoute(
 fun UpcomingEventsScreen(
     state: UpcomingEventsUiState,
     onRetry: () -> Unit,
+    onEventClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -104,6 +107,7 @@ fun UpcomingEventsScreen(
                 )
                 is UpcomingEventsUiState.Success -> EventsList(
                     state = currentState,
+                    onEventClick = onEventClick,
                     contentPadding = contentPadding,
                 )
             }
@@ -180,6 +184,7 @@ private fun MessageState(
 @Composable
 private fun EventsList(
     state: UpcomingEventsUiState.Success,
+    onEventClick: (String) -> Unit,
     contentPadding: PaddingValues,
 ) {
     LazyColumn(
@@ -207,14 +212,17 @@ private fun EventsList(
                 }
             }
         }
-        items(items = state.events, key = UpcomingEvent::id) { event ->
-            EventCard(event)
+        items(items = state.events, key = CombatEvent::id) { event ->
+            EventCard(event = event, onClick = { onEventClick(event.id) })
         }
     }
 }
 
 @Composable
-private fun EventCard(event: UpcomingEvent) {
+private fun EventCard(
+    event: CombatEvent,
+    onClick: () -> Unit,
+) {
     val formatter = remember {
         DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
             .withZone(ZoneId.systemDefault())
@@ -222,6 +230,7 @@ private fun EventCard(event: UpcomingEvent) {
     val location = listOfNotNull(event.city, event.countryCode).joinToString(", ")
 
     Card(
+        onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
@@ -242,7 +251,7 @@ private fun EventCard(event: UpcomingEvent) {
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.labelLarge,
                 )
-                StatusLabel(event.status)
+                EventStatusLabel(event.status)
             }
             Spacer(Modifier.height(FightSpacing.medium))
             Text(text = event.name, style = MaterialTheme.typography.titleLarge)
@@ -262,29 +271,5 @@ private fun EventCard(event: UpcomingEvent) {
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun StatusLabel(status: EventStatus) {
-    val text = when (status) {
-        EventStatus.SCHEDULED -> stringResource(R.string.event_status_scheduled)
-        EventStatus.POSTPONED -> stringResource(R.string.event_status_postponed)
-    }
-    Surface(
-        color = when (status) {
-            EventStatus.SCHEDULED -> MaterialTheme.colorScheme.primaryContainer
-            EventStatus.POSTPONED -> MaterialTheme.colorScheme.errorContainer
-        },
-        shape = MaterialTheme.shapes.extraSmall,
-    ) {
-        Text(
-            text = text.uppercase(),
-            modifier = Modifier.padding(
-                horizontal = FightSpacing.small,
-                vertical = FightSpacing.xSmall,
-            ),
-            style = MaterialTheme.typography.labelSmall,
-        )
     }
 }

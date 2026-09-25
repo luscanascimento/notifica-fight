@@ -2,7 +2,7 @@ package com.notificafight.domain.model
 
 import java.time.Instant
 
-data class UpcomingEvent(
+data class CombatEvent(
     val id: String,
     val name: String,
     val startTime: Instant,
@@ -23,4 +23,6 @@ data class Organization(
 enum class EventStatus {
     SCHEDULED,
     POSTPONED,
+    CANCELED,
+    FINISHED,
 }

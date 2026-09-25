@@ -2,8 +2,8 @@ package com.notificafight.feature.upcoming
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.notificafight.domain.model.UpcomingEvent
-import com.notificafight.domain.repository.UpcomingEventsRepository
+import com.notificafight.domain.model.CombatEvent
+import com.notificafight.domain.repository.EventsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,14 +13,14 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class UpcomingEventsViewModel @Inject constructor(
-    private val repository: UpcomingEventsRepository,
+    private val repository: EventsRepository,
 ) : ViewModel() {
     private val mutableUiState = MutableStateFlow<UpcomingEventsUiState>(
         UpcomingEventsUiState.Loading,
     )
     val uiState: StateFlow<UpcomingEventsUiState> = mutableUiState.asStateFlow()
 
-    private var latestEvents: List<UpcomingEvent> = emptyList()
+    private var latestEvents: List<CombatEvent> = emptyList()
     private var refreshFinished = false
     private var lastRefreshFailed = false
 
@@ -48,7 +48,7 @@ class UpcomingEventsViewModel @Inject constructor(
         }
         refreshFinished = false
         viewModelScope.launch {
-            lastRefreshFailed = repository.refresh().isFailure
+            lastRefreshFailed = repository.refreshUpcoming().isFailure
             refreshFinished = true
             updateState()
         }

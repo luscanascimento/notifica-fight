@@ -8,16 +8,17 @@ A primeira vertical slice entrega somente organizações e próximos eventos. Ev
 PostgreSQL
     |
 Prisma -> EventsService -> GET /v1/events/upcoming
-                              |
-                         Retrofit
-                              |
-                         Repository
-                              |
-                            Room
-                              |
-                      ViewModel/StateFlow
-                              |
-                           Compose
+                         -> GET /v1/events/:id
+                                  |
+                              Retrofit
+                                  |
+                              Repository
+                                  |
+                                Room
+                                  |
+                          ViewModel/StateFlow
+                                  |
+                               Compose
 ```
 
 ## Backend
@@ -41,12 +42,15 @@ O endpoint de próximos eventos retorna no máximo 50 registros `SCHEDULED` ou `
 
 - `core/network`: contrato Retrofit e DTOs remotos;
 - `core/database`: Room, entidade e DAO;
-- `data`: validação, mapping, sincronização e cache;
+- `data`: validação, mapping, sincronização da lista e do detalhe e cache;
 - `domain`: modelo consumido pela tela e boundary do repository;
 - `feature/upcoming`: estado, ViewModel e Compose;
+- `feature/details`: detalhe selecionado, refresh individual e fallback para o cache;
 - `ui/theme`: tokens e tema Material 3.
 
 A UI nunca chama Retrofit. O repository valida o payload, substitui atomicamente o pequeno cache da listagem e o Room notifica o ViewModel. Falha de rede não apaga dados já sincronizados.
+
+Ao selecionar um card, o app abre o detalhe e atualiza somente aquele evento pelo endpoint por ID. A resposta é validada e salva com upsert; se a rede falhar, o detalhe previamente armazenado continua visível com indicação de dados locais.
 
 Estados da tela:
 
@@ -57,4 +61,4 @@ Estados da tela:
 
 ## Próximos passos
 
-A ordem preservada é: Event Details, Organizations, Fights/Card, admin básico e somente então primeiro provider e pipeline de ingestão. Worker/BullMQ e Redis entram quando existir job assíncrono real; FCM entra na etapa de registro de dispositivos e alertas.
+A ordem preservada é: Organizations, Fights/Card, admin básico e somente então primeiro provider e pipeline de ingestão. Worker/BullMQ e Redis entram quando existir job assíncrono real; FCM entra na etapa de registro de dispositivos e alertas.

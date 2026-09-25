@@ -6,8 +6,8 @@ import com.notificafight.core.network.EventApi
 import com.notificafight.core.network.RemoteEvent
 import com.notificafight.domain.model.EventStatus
 import com.notificafight.domain.model.Organization
-import com.notificafight.domain.model.UpcomingEvent
-import com.notificafight.domain.repository.UpcomingEventsRepository
+import com.notificafight.domain.model.CombatEvent
+import com.notificafight.domain.repository.EventsRepository
 import java.time.Instant
 import java.time.ZoneId
 import java.util.UUID
@@ -18,18 +18,32 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 @Singleton
-class UpcomingEventsRepositoryImpl @Inject constructor(
+class EventsRepositoryImpl @Inject constructor(
     private val api: EventApi,
     private val eventDao: EventDao,
-) : UpcomingEventsRepository {
-    override fun observeUpcomingEvents(): Flow<List<UpcomingEvent>> =
+) : EventsRepository {
+    override fun observeUpcomingEvents(): Flow<List<CombatEvent>> =
         eventDao.observeUpcoming(System.currentTimeMillis()).map { events ->
             events.map(EventEntity::toDomain)
         }
 
-    override suspend fun refresh(): Result<Unit> = try {
+    override fun observeEvent(id: String): Flow<CombatEvent?> =
+        eventDao.observeById(id).map { event -> event?.toDomain() }
+
+    override suspend fun refreshUpcoming(): Result<Unit> = try {
         val events = api.getUpcomingEvents().map(RemoteEvent::toEntity)
         eventDao.replaceAll(events)
+        Result.success(Unit)
+    } catch (exception: CancellationException) {
+        throw exception
+    } catch (exception: Exception) {
+        Result.failure(exception)
+    }
+
+    override suspend fun refreshEvent(id: String): Result<Unit> = try {
+        val event = api.getEvent(id).toEntity()
+        require(event.id == id) { "Event ID does not match the requested resource" }
+        eventDao.insert(event)
         Result.success(Unit)
     } catch (exception: CancellationException) {
         throw exception
@@ -66,7 +80,7 @@ private fun RemoteEvent.toEntity(): EventEntity {
     )
 }
 
-private fun EventEntity.toDomain(): UpcomingEvent = UpcomingEvent(
+private fun EventEntity.toDomain(): CombatEvent = CombatEvent(
     id = id,
     name = name,
     startTime = Instant.ofEpochMilli(startTimeEpochMillis),

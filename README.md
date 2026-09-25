@@ -67,7 +67,7 @@ cd android
 ./gradlew assembleRelease -PNOTIFICA_API_BASE_URL=https://api.example.com/
 ```
 
-O Room persiste cada sincronização bem-sucedida. Se a API estiver indisponível em uma abertura posterior, a tela continua exibindo os eventos salvos e informa que os dados são locais. Se não houver cache, exibe o estado de erro com ação de tentar novamente.
+O Room persiste cada sincronização bem-sucedida. Um toque no card abre o detalhe e atualiza somente o evento selecionado. Se a API estiver indisponível em uma abertura posterior, tanto a lista quanto o detalhe continuam exibindo os dados salvos e informam que os dados são locais. Se não houver cache, a tela exibe o estado de erro com ação de tentar novamente.
 
 ## Testes e checks
 

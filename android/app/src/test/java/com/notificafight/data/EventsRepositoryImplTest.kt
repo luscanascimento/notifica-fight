@@ -9,21 +9,22 @@ import com.notificafight.domain.model.EventStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class UpcomingEventsRepositoryImplTest {
+class EventsRepositoryImplTest {
     @Test
     fun `refresh validates maps and stores remote events`() = runTest {
         val dao = FakeEventDao()
-        val repository = UpcomingEventsRepositoryImpl(
+        val repository = EventsRepositoryImpl(
             api = FakeEventApi(listOf(remoteEvent())),
             eventDao = dao,
         )
 
-        assertTrue(repository.refresh().isSuccess)
+        assertTrue(repository.refreshUpcoming().isSuccess)
         val cached = repository.observeUpcomingEvents().first()
 
         assertEquals(1, cached.size)
@@ -49,10 +50,47 @@ class UpcomingEventsRepositoryImplTest {
         )
         val dao = FakeEventDao(listOf(existing))
         val invalid = remoteEvent().copy(timezone = "not-a-timezone")
-        val repository = UpcomingEventsRepositoryImpl(FakeEventApi(listOf(invalid)), dao)
+        val repository = EventsRepositoryImpl(FakeEventApi(listOf(invalid)), dao)
 
-        assertTrue(repository.refresh().isFailure)
+        assertTrue(repository.refreshUpcoming().isFailure)
         assertEquals("Cached Event", dao.events.value.single().name)
+    }
+
+    @Test
+    fun `refresh event validates and stores the requested event without clearing cache`() = runTest {
+        val existing = remoteEvent().copy(
+            id = "01990000-0000-7000-8000-000000000100",
+            name = "Cached Event",
+        ).toEntityForTest()
+        val requested = remoteEvent()
+        val dao = FakeEventDao(listOf(existing))
+        val repository = EventsRepositoryImpl(FakeEventApi(listOf(requested)), dao)
+
+        assertTrue(repository.refreshEvent(requested.id).isSuccess)
+
+        assertEquals(2, dao.events.value.size)
+        assertEquals(requested.name, repository.observeEvent(requested.id).first()?.name)
+    }
+
+    @Test
+    fun `mismatched detail response fails without changing cache`() = runTest {
+        val existing = remoteEvent().toEntityForTest()
+        val dao = FakeEventDao(listOf(existing))
+        val repository = EventsRepositoryImpl(FakeEventApi(listOf(remoteEvent())), dao)
+
+        val result = repository.refreshEvent("01990000-0000-7000-8000-000000000999")
+
+        assertTrue(result.isFailure)
+        assertEquals(listOf(existing), dao.events.value)
+    }
+
+    @Test
+    fun `detail accepts terminal event status`() = runTest {
+        val finished = remoteEvent().copy(status = "FINISHED")
+        val repository = EventsRepositoryImpl(FakeEventApi(listOf(finished)), FakeEventDao())
+
+        assertTrue(repository.refreshEvent(finished.id).isSuccess)
+        assertEquals(EventStatus.FINISHED, repository.observeEvent(finished.id).first()?.status)
     }
 }
 
@@ -60,6 +98,8 @@ private class FakeEventApi(
     private val response: List<RemoteEvent>,
 ) : EventApi {
     override suspend fun getUpcomingEvents(): List<RemoteEvent> = response
+
+    override suspend fun getEvent(id: String): RemoteEvent = response.single()
 }
 
 private class FakeEventDao(initial: List<EventEntity> = emptyList()) : EventDao {
@@ -67,8 +107,15 @@ private class FakeEventDao(initial: List<EventEntity> = emptyList()) : EventDao 
 
     override fun observeUpcoming(nowEpochMillis: Long): Flow<List<EventEntity>> = events
 
+    override fun observeById(id: String): Flow<EventEntity?> =
+        events.map { cached -> cached.find { it.id == id } }
+
     override suspend fun insertAll(events: List<EventEntity>) {
         this.events.value = events
+    }
+
+    override suspend fun insert(event: EventEntity) {
+        events.value = events.value.filterNot { it.id == event.id } + event
     }
 
     override suspend fun deleteAll() {
@@ -90,4 +137,18 @@ private fun remoteEvent() = RemoteEvent(
         code = "UFC",
         name = "UFC",
     ),
+)
+
+private fun RemoteEvent.toEntityForTest() = EventEntity(
+    id = id,
+    name = name,
+    startTimeEpochMillis = java.time.Instant.parse(startTime).toEpochMilli(),
+    timezone = timezone,
+    status = status,
+    venueName = venueName,
+    city = city,
+    countryCode = countryCode,
+    organizationId = organization.id,
+    organizationCode = organization.code,
+    organizationName = organization.name,
 )

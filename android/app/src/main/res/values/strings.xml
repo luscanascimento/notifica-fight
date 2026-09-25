@@ -10,4 +10,14 @@
     <string name="offline_data">Sem conexão — exibindo dados salvos</string>
     <string name="event_status_scheduled">Em breve</string>
     <string name="event_status_postponed">Adiado</string>
+    <string name="event_status_canceled">Cancelado</string>
+    <string name="event_status_finished">Encerrado</string>
+    <string name="event_details_title">Detalhes do evento</string>
+    <string name="loading_event_details">Carregando detalhes</string>
+    <string name="error_event_details_title">Não foi possível carregar o evento</string>
+    <string name="back">Voltar</string>
+    <string name="event_date_and_time">Data e hora</string>
+    <string name="event_location">Local</string>
+    <string name="event_location_unavailable">Local a definir</string>
+    <string name="event_timezone">Fuso do evento</string>
 </resources>

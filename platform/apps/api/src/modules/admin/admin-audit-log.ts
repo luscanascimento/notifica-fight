@@ -1,6 +1,6 @@
 import type { Prisma } from "../../generated/prisma/client";
 
-export type AdminAuditEntityType = "EVENT" | "ORGANIZATION";
+export type AdminAuditEntityType = "EVENT" | "FIGHT" | "ORGANIZATION";
 
 interface AdminAuditEntry {
   actorSubject: string;

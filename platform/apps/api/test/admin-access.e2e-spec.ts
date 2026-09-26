@@ -13,6 +13,8 @@ import request from "supertest";
 import { AdminAccessController } from "../src/modules/admin/admin-access.controller";
 import { AdminEventsController } from "../src/modules/admin/admin-events.controller";
 import { AdminEventsService } from "../src/modules/admin/admin-events.service";
+import { AdminFightsController } from "../src/modules/admin/admin-fights.controller";
+import { AdminFightsService } from "../src/modules/admin/admin-fights.service";
 import { AdminOrganizationsController } from "../src/modules/admin/admin-organizations.controller";
 import { AdminOrganizationsService } from "../src/modules/admin/admin-organizations.service";
 import { AdminAuthGuard } from "../src/modules/admin/auth/admin-auth.guard";
@@ -27,6 +29,7 @@ describe("Administrative access endpoint", () => {
   let jwksServer: Server;
   let privateKey: KeyLike;
   const createEvent = jest.fn();
+  const createFight = jest.fn();
   const createOrganization = jest.fn();
 
   beforeAll(async () => {
@@ -59,6 +62,7 @@ describe("Administrative access endpoint", () => {
       controllers: [
         AdminAccessController,
         AdminEventsController,
+        AdminFightsController,
         AdminOrganizationsController,
       ],
       providers: [
@@ -67,6 +71,10 @@ describe("Administrative access endpoint", () => {
         {
           provide: AdminEventsService,
           useValue: { create: createEvent },
+        },
+        {
+          provide: AdminFightsService,
+          useValue: { create: createFight },
         },
         {
           provide: AdminOrganizationsService,
@@ -101,6 +109,10 @@ describe("Administrative access endpoint", () => {
 
   it.each([
     ["/v1/admin/events", createEvent],
+    [
+      "/v1/admin/events/01990000-0000-7000-8000-000000000101/fights",
+      createFight,
+    ],
     ["/v1/admin/organizations", createOrganization],
   ])("protects %s with the same bearer guard", async (path, create) => {
     const server = app.getHttpServer() as Parameters<typeof request>[0];

@@ -4,7 +4,7 @@ Aplicativo Android para consultar eventos e cards de esportes de combate. A entr
 
 `PostgreSQL -> NestJS -> REST -> Android -> Room -> ViewModel -> Compose`
 
-Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais. A API possui acesso administrativo via OIDC, permite cadastrar organizações e eventos agendados e registra essas mutações em audit log append-only; as demais mutações administrativas ainda não fazem parte desta entrega.
+Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais. A API possui acesso administrativo via OIDC, permite cadastrar organizações, eventos agendados e lutas dos cards e registra essas mutações em audit log append-only; as demais mutações administrativas ainda não fazem parte desta entrega.
 
 ## Stack atual
 
@@ -69,6 +69,12 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"organizationId":"01990000-0000-7000-8000-000000000001","name":"[DEV] Example Event","startTime":"2030-01-12T23:00:00.000Z","timezone":"America/New_York","city":"Example City","countryCode":"US"}' \
   http://localhost:3000/v1/admin/events
+
+curl -X POST \
+  -H 'Authorization: Bearer <OIDC_ACCESS_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{"cardPosition":3,"redCornerName":"[DEV] Taylor North","blueCornerName":"[DEV] Cameron Vale","weightClass":"Lightweight"}' \
+  http://localhost:3000/v1/admin/events/01990000-0000-7000-8000-000000000101/fights
 ```
 
 ## Executar o Android
@@ -151,6 +157,7 @@ AGENTS.md                 regras duráveis para sessões de desenvolvimento
 - Rotas administrativas validam assinatura RS256 via JWKS, issuer, audience, expiração e role no servidor.
 - O cadastro administrativo de organizações normaliza o código para maiúsculas, rejeita campos desconhecidos e retorna conflito para códigos duplicados.
 - O cadastro de eventos exige organização existente, instante com offset explícito e timezone IANA, persiste o instante em UTC e inicia o evento como `SCHEDULED`.
+- O cadastro de lutas exige evento existente e posição positiva e única no card; resultado, método e rounds continuam fora do escopo.
 - Criação e auditoria usam a mesma transação; o log guarda o subject OIDC, a ação e a entidade, e triggers do PostgreSQL bloqueiam alterações, exclusões e truncamento.
 
 Mais detalhes em [arquitetura](docs/architecture.md), [segurança](docs/security.md) e [fontes de dados](docs/data-sources.md).

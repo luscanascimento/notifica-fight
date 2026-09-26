@@ -15,7 +15,7 @@ describe("Upcoming events database integration", () => {
     await app.init();
   });
 
-  afterAll(async () => app.close());
+  afterAll(async () => app?.close());
 
   it("reads seeded future events through the public endpoint", async () => {
     const server = app.getHttpServer() as Parameters<typeof request>[0];

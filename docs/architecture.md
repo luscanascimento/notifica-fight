@@ -2,7 +2,7 @@
 
 ## Escopo atual
 
-A vertical slice atual entrega organizações, próximos eventos, detalhe e card de lutas. Dados fictícios entram por seed no PostgreSQL, são expostos pela API e sincronizados no Android. O acesso administrativo está protegido por OIDC e RBAC e permite cadastrar organizações e eventos agendados. Provider externo, ingestão, worker, painel administrativo, resultados e notificações não fazem parte desta entrega.
+A vertical slice atual entrega organizações, próximos eventos, detalhe e card de lutas. Dados fictícios entram por seed no PostgreSQL, são expostos pela API e sincronizados no Android. O acesso administrativo está protegido por OIDC e RBAC, permite cadastrar organizações e eventos agendados e audita essas mutações. Provider externo, ingestão, worker, painel administrativo, resultados e notificações não fazem parte desta entrega.
 
 ```text
 PostgreSQL
@@ -41,6 +41,8 @@ O endpoint de próximos eventos retorna no máximo 50 registros `SCHEDULED` ou `
 
 `GET /v1/admin/access` valida a integração administrativa. `POST /v1/admin/organizations` cadastra uma organização com contrato explícito, normaliza o código para maiúsculas e retorna 409 se ele já existir. `POST /v1/admin/events` cria um evento `SCHEDULED`, exige uma organização existente, valida o instante com offset e o timezone IANA e persiste o instante em UTC. As rotas usam o mesmo guard, que exige bearer token assinado com RS256 por uma chave do JWKS configurado, além de `iss`, `aud`, `sub`, `exp` e a role administrativa no claim `roles`. Falhas criptográficas ou de claims retornam 401; identidade autenticada sem a role retorna 403. As URLs OIDC devem usar HTTPS em produção, e o material privado permanece exclusivamente no identity provider.
 
+Cada criação e seu registro em `AdminAuditLog` são persistidos na mesma transação. O log contém somente o subject OIDC verificado, ação, tipo e ID da entidade e timestamp; não armazena token nem payload administrativo. Triggers do PostgreSQL rejeitam `UPDATE`, `DELETE` e `TRUNCATE`, tornando o append-only uma garantia do banco, não apenas uma convenção da aplicação.
+
 ## Android
 
 `android/` é um projeto Gradle independente do workspace TypeScript. Suas responsabilidades estão separadas sem fragmentação excessiva:
@@ -71,4 +73,4 @@ Estados da tela:
 
 ## Próximos passos
 
-Com a criação básica de organizações e eventos disponível, o próximo passo é adicionar audit log append-only antes de ampliar as mutações administrativas ou integrar o primeiro provider e pipeline de ingestão. Worker/BullMQ e Redis entram quando existir job assíncrono real; resultados entram após existir fonte e regras confiáveis para esse dado, e FCM entra na etapa de registro de dispositivos e alertas.
+Com criação básica e auditoria disponíveis, o próximo passo é administrar os cards de luta antes de integrar o primeiro provider e pipeline de ingestão. Worker/BullMQ e Redis entram quando existir job assíncrono real; resultados entram após existir fonte e regras confiáveis para esse dado, e FCM entra na etapa de registro de dispositivos e alertas.

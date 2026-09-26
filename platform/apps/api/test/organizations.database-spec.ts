@@ -15,7 +15,7 @@ describe("Organizations database integration", () => {
     await app.init();
   });
 
-  afterAll(async () => app.close());
+  afterAll(async () => app?.close());
 
   it("reads seeded organizations in name order", async () => {
     const server = app.getHttpServer() as Parameters<typeof request>[0];

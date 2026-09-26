@@ -1,10 +1,12 @@
 import { ValidationPipe } from "@nestjs/common";
 import type { INestApplication } from "@nestjs/common";
+import type { ExecutionContext } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { AdminOrganizationsController } from "../src/modules/admin/admin-organizations.controller";
 import { AdminOrganizationsService } from "../src/modules/admin/admin-organizations.service";
 import { AdminAuthGuard } from "../src/modules/admin/auth/admin-auth.guard";
+import type { AdminRequest } from "../src/modules/admin/auth/admin-principal";
 
 describe("Administrative organizations endpoint", () => {
   let app: INestApplication;
@@ -19,7 +21,13 @@ describe("Administrative organizations endpoint", () => {
     });
     const moduleRef = await moduleBuilder
       .overrideGuard(AdminAuthGuard)
-      .useValue({ canActivate: () => true })
+      .useValue({
+        canActivate: (context: ExecutionContext): boolean => {
+          const request = context.switchToHttp().getRequest<AdminRequest>();
+          request.adminPrincipal = { subject: "admin-test-subject" };
+          return true;
+        },
+      })
       .compile();
 
     app = moduleRef.createNestApplication();
@@ -54,10 +62,10 @@ describe("Administrative organizations endpoint", () => {
       .expect(201);
 
     expect(response.body).toEqual(organization);
-    expect(create).toHaveBeenCalledWith({
-      code: "PFL",
-      name: "Professional Fighters League",
-    });
+    expect(create).toHaveBeenCalledWith(
+      { code: "PFL", name: "Professional Fighters League" },
+      "admin-test-subject",
+    );
   });
 
   it.each([

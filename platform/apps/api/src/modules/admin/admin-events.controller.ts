@@ -12,6 +12,7 @@ import {
 import { EventResponseDto } from "../events/dto/event-response.dto";
 import { AdminEventsService } from "./admin-events.service";
 import { AdminAuthGuard } from "./auth/admin-auth.guard";
+import { AdminSubject } from "./auth/admin-subject.decorator";
 import { CreateEventDto } from "./dto/create-event.dto";
 
 @ApiTags("admin")
@@ -28,7 +29,10 @@ export class AdminEventsController {
   @ApiUnauthorizedResponse({ description: "Bearer token is missing or invalid" })
   @ApiForbiddenResponse({ description: "Token does not grant the admin role" })
   @ApiNotFoundResponse({ description: "Organization not found" })
-  create(@Body() input: CreateEventDto): Promise<EventResponseDto> {
-    return this.adminEventsService.create(input);
+  create(
+    @Body() input: CreateEventDto,
+    @AdminSubject() actorSubject: string,
+  ): Promise<EventResponseDto> {
+    return this.adminEventsService.create(input, actorSubject);
   }
 }

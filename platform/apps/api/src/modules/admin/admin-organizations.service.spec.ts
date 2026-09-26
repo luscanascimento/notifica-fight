@@ -5,6 +5,7 @@ import type { PrismaService } from "../../infrastructure/database/prisma.service
 import { AdminOrganizationsService } from "./admin-organizations.service";
 
 describe("AdminOrganizationsService", () => {
+  const actorSubject = "admin-test-subject";
   const now = new Date("2026-09-26T12:00:00.000Z");
   const model: Organization = {
     id: "01990000-0000-7000-8000-000000000004",
@@ -16,14 +17,26 @@ describe("AdminOrganizationsService", () => {
 
   it("creates and maps an organization", async () => {
     const create = jest.fn().mockResolvedValue(model);
-    const prisma = { organization: { create } } as unknown as PrismaService;
+    const createAuditLog = jest.fn().mockResolvedValue({});
+    const prisma = prismaWithTransaction({
+      organization: { create },
+      adminAuditLog: { create: createAuditLog },
+    });
     const service = new AdminOrganizationsService(prisma);
 
     await expect(
-      service.create({ code: model.code, name: model.name }),
+      service.create({ code: model.code, name: model.name }, actorSubject),
     ).resolves.toEqual({ id: model.id, code: model.code, name: model.name });
     expect(create).toHaveBeenCalledWith({
       data: { code: model.code, name: model.name },
+    });
+    expect(createAuditLog).toHaveBeenCalledWith({
+      data: {
+        actorSubject,
+        action: "CREATE",
+        entityType: "ORGANIZATION",
+        entityId: model.id,
+      },
     });
   });
 
@@ -37,22 +50,50 @@ describe("AdminOrganizationsService", () => {
       },
     );
     const create = jest.fn().mockRejectedValue(duplicateError);
-    const prisma = { organization: { create } } as unknown as PrismaService;
+    const prisma = prismaWithTransaction({
+      organization: { create },
+      adminAuditLog: { create: jest.fn() },
+    });
     const service = new AdminOrganizationsService(prisma);
 
     await expect(
-      service.create({ code: model.code, name: model.name }),
+      service.create({ code: model.code, name: model.name }, actorSubject),
     ).rejects.toThrow(ConflictException);
   });
 
   it("does not hide unexpected database errors", async () => {
     const databaseError = new Error("database unavailable");
     const create = jest.fn().mockRejectedValue(databaseError);
-    const prisma = { organization: { create } } as unknown as PrismaService;
+    const prisma = prismaWithTransaction({
+      organization: { create },
+      adminAuditLog: { create: jest.fn() },
+    });
     const service = new AdminOrganizationsService(prisma);
 
     await expect(
-      service.create({ code: model.code, name: model.name }),
+      service.create({ code: model.code, name: model.name }, actorSubject),
     ).rejects.toBe(databaseError);
   });
+
+  it("fails the transaction when the audit record cannot be written", async () => {
+    const auditError = new Error("audit unavailable");
+    const prisma = prismaWithTransaction({
+      organization: { create: jest.fn().mockResolvedValue(model) },
+      adminAuditLog: { create: jest.fn().mockRejectedValue(auditError) },
+    });
+    const service = new AdminOrganizationsService(prisma);
+
+    await expect(
+      service.create({ code: model.code, name: model.name }, actorSubject),
+    ).rejects.toBe(auditError);
+  });
+
+  function prismaWithTransaction(transaction: object): PrismaService {
+    return {
+      $transaction: jest.fn(
+        (operation: (client: Prisma.TransactionClient) => Promise<unknown>) =>
+          operation(transaction as Prisma.TransactionClient),
+      ),
+    } as unknown as PrismaService;
+  }
 });

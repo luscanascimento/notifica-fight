@@ -8,6 +8,7 @@ import {
 import { ConfigService } from "@nestjs/config";
 import type { Request } from "express";
 import type { EnvironmentVariables } from "../../../config/environment";
+import type { AdminRequest } from "./admin-principal";
 import { OidcTokenVerifier } from "./oidc-token-verifier";
 
 @Injectable()
@@ -22,23 +23,24 @@ export class AdminAuthGuard implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<AdminRequest>();
     const token = this.bearerTokenFrom(request);
     if (!token) {
       throw new UnauthorizedException("Bearer token is required");
     }
 
-    let roles: readonly string[];
+    let principal: Awaited<ReturnType<OidcTokenVerifier["verify"]>>;
     try {
-      ({ roles } = await this.tokenVerifier.verify(token));
+      principal = await this.tokenVerifier.verify(token);
     } catch {
       throw new UnauthorizedException("Bearer token is invalid");
     }
 
-    if (!roles.includes(this.adminRole)) {
+    if (!principal.roles.includes(this.adminRole)) {
       throw new ForbiddenException("Admin role is required");
     }
 
+    request.adminPrincipal = { subject: principal.subject };
     return true;
   }
 

@@ -6,6 +6,7 @@ import type { PrismaService } from "../../infrastructure/database/prisma.service
 import { AdminEventsService } from "./admin-events.service";
 
 describe("AdminEventsService", () => {
+  const actorSubject = "admin-test-subject";
   const now = new Date("2026-09-26T12:00:00.000Z");
   const organization: Organization = {
     id: "01990000-0000-7000-8000-000000000001",
@@ -31,18 +32,25 @@ describe("AdminEventsService", () => {
 
   it("creates a scheduled event and maps its organization", async () => {
     const create = jest.fn().mockResolvedValue(model);
-    const prisma = { event: { create } } as unknown as PrismaService;
+    const createAuditLog = jest.fn().mockResolvedValue({});
+    const prisma = prismaWithTransaction({
+      event: { create },
+      adminAuditLog: { create: createAuditLog },
+    });
     const service = new AdminEventsService(prisma);
 
     await expect(
-      service.create({
-        organizationId: organization.id,
-        name: model.name,
-        startTime: "2030-01-12T18:00:00.000-05:00",
-        timezone: model.timezone,
-        city: model.city,
-        countryCode: model.countryCode,
-      }),
+      service.create(
+        {
+          organizationId: organization.id,
+          name: model.name,
+          startTime: "2030-01-12T18:00:00.000-05:00",
+          timezone: model.timezone,
+          city: model.city,
+          countryCode: model.countryCode,
+        },
+        actorSubject,
+      ),
     ).resolves.toEqual({
       id: model.id,
       name: model.name,
@@ -71,6 +79,14 @@ describe("AdminEventsService", () => {
       },
       include: { organization: true },
     });
+    expect(createAuditLog).toHaveBeenCalledWith({
+      data: {
+        actorSubject,
+        action: "CREATE",
+        entityType: "EVENT",
+        entityId: model.id,
+      },
+    });
   });
 
   it("reports an unknown organization as not found", async () => {
@@ -83,32 +99,74 @@ describe("AdminEventsService", () => {
       },
     );
     const create = jest.fn().mockRejectedValue(foreignKeyError);
-    const prisma = { event: { create } } as unknown as PrismaService;
+    const prisma = prismaWithTransaction({
+      event: { create },
+      adminAuditLog: { create: jest.fn() },
+    });
     const service = new AdminEventsService(prisma);
 
     await expect(
-      service.create({
-        organizationId: organization.id,
-        name: model.name,
-        startTime: model.startTime.toISOString(),
-        timezone: model.timezone,
-      }),
+      service.create(
+        {
+          organizationId: organization.id,
+          name: model.name,
+          startTime: model.startTime.toISOString(),
+          timezone: model.timezone,
+        },
+        actorSubject,
+      ),
     ).rejects.toThrow(NotFoundException);
   });
 
   it("does not hide unexpected database errors", async () => {
     const databaseError = new Error("database unavailable");
     const create = jest.fn().mockRejectedValue(databaseError);
-    const prisma = { event: { create } } as unknown as PrismaService;
+    const prisma = prismaWithTransaction({
+      event: { create },
+      adminAuditLog: { create: jest.fn() },
+    });
     const service = new AdminEventsService(prisma);
 
     await expect(
-      service.create({
-        organizationId: organization.id,
-        name: model.name,
-        startTime: model.startTime.toISOString(),
-        timezone: model.timezone,
-      }),
+      service.create(
+        {
+          organizationId: organization.id,
+          name: model.name,
+          startTime: model.startTime.toISOString(),
+          timezone: model.timezone,
+        },
+        actorSubject,
+      ),
     ).rejects.toBe(databaseError);
   });
+
+  it("fails the transaction when the audit record cannot be written", async () => {
+    const auditError = new Error("audit unavailable");
+    const prisma = prismaWithTransaction({
+      event: { create: jest.fn().mockResolvedValue(model) },
+      adminAuditLog: { create: jest.fn().mockRejectedValue(auditError) },
+    });
+    const service = new AdminEventsService(prisma);
+
+    await expect(
+      service.create(
+        {
+          organizationId: organization.id,
+          name: model.name,
+          startTime: model.startTime.toISOString(),
+          timezone: model.timezone,
+        },
+        actorSubject,
+      ),
+    ).rejects.toBe(auditError);
+  });
+
+  function prismaWithTransaction(transaction: object): PrismaService {
+    return {
+      $transaction: jest.fn(
+        (operation: (client: Prisma.TransactionClient) => Promise<unknown>) =>
+          operation(transaction as Prisma.TransactionClient),
+      ),
+    } as unknown as PrismaService;
+  }
 });

@@ -4,7 +4,7 @@ Aplicativo Android para consultar eventos e cards de esportes de combate. A entr
 
 `PostgreSQL -> NestJS -> REST -> Android -> Room -> ViewModel -> Compose`
 
-Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais. A API possui acesso administrativo via OIDC e permite cadastrar organizações e eventos agendados; as demais mutações administrativas ainda não fazem parte desta entrega.
+Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais. A API possui acesso administrativo via OIDC, permite cadastrar organizações e eventos agendados e registra essas mutações em audit log append-only; as demais mutações administrativas ainda não fazem parte desta entrega.
 
 ## Stack atual
 
@@ -151,5 +151,6 @@ AGENTS.md                 regras duráveis para sessões de desenvolvimento
 - Rotas administrativas validam assinatura RS256 via JWKS, issuer, audience, expiração e role no servidor.
 - O cadastro administrativo de organizações normaliza o código para maiúsculas, rejeita campos desconhecidos e retorna conflito para códigos duplicados.
 - O cadastro de eventos exige organização existente, instante com offset explícito e timezone IANA, persiste o instante em UTC e inicia o evento como `SCHEDULED`.
+- Criação e auditoria usam a mesma transação; o log guarda o subject OIDC, a ação e a entidade, e triggers do PostgreSQL bloqueiam alterações, exclusões e truncamento.
 
 Mais detalhes em [arquitetura](docs/architecture.md), [segurança](docs/security.md) e [fontes de dados](docs/data-sources.md).

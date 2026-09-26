@@ -12,6 +12,7 @@ import {
 import { OrganizationResponseDto } from "../organizations/dto/organization-response.dto";
 import { AdminOrganizationsService } from "./admin-organizations.service";
 import { AdminAuthGuard } from "./auth/admin-auth.guard";
+import { AdminSubject } from "./auth/admin-subject.decorator";
 import { CreateOrganizationDto } from "./dto/create-organization.dto";
 
 @ApiTags("admin")
@@ -32,7 +33,8 @@ export class AdminOrganizationsController {
   @ApiConflictResponse({ description: "Organization code already exists" })
   create(
     @Body() input: CreateOrganizationDto,
+    @AdminSubject() actorSubject: string,
   ): Promise<OrganizationResponseDto> {
-    return this.adminOrganizationsService.create(input);
+    return this.adminOrganizationsService.create(input, actorSubject);
   }
 }

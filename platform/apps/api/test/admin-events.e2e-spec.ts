@@ -1,11 +1,13 @@
 import { ValidationPipe } from "@nestjs/common";
 import type { INestApplication } from "@nestjs/common";
+import type { ExecutionContext } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { EventStatus } from "../src/generated/prisma/enums";
 import { AdminEventsController } from "../src/modules/admin/admin-events.controller";
 import { AdminEventsService } from "../src/modules/admin/admin-events.service";
 import { AdminAuthGuard } from "../src/modules/admin/auth/admin-auth.guard";
+import type { AdminRequest } from "../src/modules/admin/auth/admin-principal";
 
 describe("Administrative events endpoint", () => {
   let app: INestApplication;
@@ -18,7 +20,13 @@ describe("Administrative events endpoint", () => {
     });
     const moduleRef = await moduleBuilder
       .overrideGuard(AdminAuthGuard)
-      .useValue({ canActivate: () => true })
+      .useValue({
+        canActivate: (context: ExecutionContext): boolean => {
+          const request = context.switchToHttp().getRequest<AdminRequest>();
+          request.adminPrincipal = { subject: "admin-test-subject" };
+          return true;
+        },
+      })
       .compile();
 
     app = moduleRef.createNestApplication();
@@ -68,15 +76,18 @@ describe("Administrative events endpoint", () => {
       .expect(201);
 
     expect(response.body).toEqual(event);
-    expect(create).toHaveBeenCalledWith({
-      organizationId,
-      name: "[DEV] Example Event",
-      startTime: "2030-01-12T18:00:00.000-05:00",
-      timezone: "America/New_York",
-      venueName: "Development Arena",
-      city: "Example City",
-      countryCode: "US",
-    });
+    expect(create).toHaveBeenCalledWith(
+      {
+        organizationId,
+        name: "[DEV] Example Event",
+        startTime: "2030-01-12T18:00:00.000-05:00",
+        timezone: "America/New_York",
+        venueName: "Development Arena",
+        city: "Example City",
+        countryCode: "US",
+      },
+      "admin-test-subject",
+    );
   });
 
   it.each([

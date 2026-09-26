@@ -14,6 +14,8 @@
 - logs JSON via Pino, request ID gerado pelo servidor e redaction de authorization, cookies e tokens;
 - `/v1/admin` protegido por JWT OIDC assinado com RS256, JWKS confiável, validação de issuer, audience, expiração e subject;
 - RBAC administrativo deny-by-default com role obrigatória no claim `roles` e distinção entre 401 e 403;
+- mutações administrativas e seus registros de auditoria persistidos atomicamente, associados ao subject OIDC verificado;
+- audit log sem tokens ou payloads, protegido contra `UPDATE`, `DELETE` e `TRUNCATE` por triggers no PostgreSQL;
 - URLs OIDC obrigatoriamente HTTPS em produção; HTTP é aceito apenas para loopback em desenvolvimento e testes;
 - PostgreSQL e Redis publicados somente em `127.0.0.1` no Compose;
 - dependências fixadas por lockfile e auditoria pnpm sem vulnerabilidades conhecidas na entrega.
@@ -31,7 +33,7 @@
 
 ## Limites atuais
 
-Os endpoints de conteúdo são públicos e read-only. Não existe autenticação de usuário porque ela não é necessária no MVP. As mutações administrativas atuais cadastram organizações e eventos agendados e permanecem sob `/v1/admin`, com a validação OIDC e o RBAC atuais. MFA deve ser exigido no identity provider. O audit log append-only é a próxima etapa de segurança antes de ampliar novamente a superfície administrativa.
+Os endpoints de conteúdo são públicos e read-only. Não existe autenticação de usuário porque ela não é necessária no MVP. As mutações administrativas atuais cadastram organizações e eventos agendados e permanecem sob `/v1/admin`, com a validação OIDC, o RBAC e o audit log append-only atuais. MFA deve ser exigido no identity provider. Ainda não existe endpoint de consulta do audit log; o acesso operacional deve ocorrer com uma role PostgreSQL read-only separada até haver uma necessidade de produto para expô-lo na API.
 
 O contrato inicial espera uma role de administração em um claim `roles` no nível superior do access token. O identity provider deve emitir esse claim para a audience exclusiva da API; tokens destinados a outra audience são rejeitados. Chaves simétricas, algoritmos diferentes de RS256 e chaves fornecidas pelo próprio header do token não são aceitos.
 

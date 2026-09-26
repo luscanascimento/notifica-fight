@@ -91,6 +91,8 @@ describe("Administrative access endpoint", () => {
     });
   });
 
+  beforeEach(() => jest.clearAllMocks());
+
   it("rejects a request without a bearer token", async () => {
     const server = app.getHttpServer() as Parameters<typeof request>[0];
 
@@ -141,6 +143,29 @@ describe("Administrative access endpoint", () => {
       .expect(200);
 
     expect(response.body).toEqual({ authorized: true });
+  });
+
+  it("propagates the verified subject to an administrative mutation", async () => {
+    const organization = {
+      id: "01990000-0000-7000-8000-000000000004",
+      code: "PFL",
+      name: "Professional Fighters League",
+    };
+    createOrganization.mockResolvedValue(organization);
+    const token = await signToken([adminRole]);
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    const response = await request(server)
+      .post("/v1/admin/organizations")
+      .set("authorization", `Bearer ${token}`)
+      .send({ code: organization.code, name: organization.name })
+      .expect(201);
+
+    expect(response.body).toEqual(organization);
+    expect(createOrganization).toHaveBeenCalledWith(
+      { code: organization.code, name: organization.name },
+      "admin-test-subject",
+    );
   });
 
   async function signToken(

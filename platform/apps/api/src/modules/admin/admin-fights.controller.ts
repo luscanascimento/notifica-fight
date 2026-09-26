@@ -3,6 +3,7 @@ import {
   Controller,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   UseGuards,
 } from "@nestjs/common";
@@ -13,6 +14,7 @@ import {
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
@@ -23,6 +25,7 @@ import { AdminFightsService } from "./admin-fights.service";
 import { AdminAuthGuard } from "./auth/admin-auth.guard";
 import { AdminSubject } from "./auth/admin-subject.decorator";
 import { CreateFightDto } from "./dto/create-fight.dto";
+import { UpdateFightDto } from "./dto/update-fight.dto";
 
 @ApiTags("admin")
 @ApiBearerAuth("oidc")
@@ -46,5 +49,29 @@ export class AdminFightsController {
     @AdminSubject() actorSubject: string,
   ): Promise<FightResponseDto> {
     return this.adminFightsService.create(eventId, input, actorSubject);
+  }
+
+  @Patch(":fightId")
+  @ApiOperation({ summary: "Update a fight on an event card" })
+  @ApiParam({ name: "eventId", format: "uuid" })
+  @ApiParam({ name: "fightId", format: "uuid" })
+  @ApiOkResponse({ type: FightResponseDto })
+  @ApiBadRequestResponse({ description: "Invalid event ID, fight ID or data" })
+  @ApiUnauthorizedResponse({ description: "Bearer token is missing or invalid" })
+  @ApiForbiddenResponse({ description: "Token does not grant the admin role" })
+  @ApiNotFoundResponse({ description: "Fight not found for this event" })
+  @ApiConflictResponse({ description: "Card position already exists" })
+  update(
+    @Param("eventId", new ParseUUIDPipe()) eventId: string,
+    @Param("fightId", new ParseUUIDPipe()) fightId: string,
+    @Body() input: UpdateFightDto,
+    @AdminSubject() actorSubject: string,
+  ): Promise<FightResponseDto> {
+    return this.adminFightsService.update(
+      eventId,
+      fightId,
+      input,
+      actorSubject,
+    );
   }
 }

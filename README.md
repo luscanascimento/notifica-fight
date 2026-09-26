@@ -81,6 +81,12 @@ curl -X PATCH \
   -H 'Content-Type: application/json' \
   -d '{"status":"POSTPONED","startTime":"2030-01-13T01:00:00.000Z"}' \
   http://localhost:3000/v1/admin/events/01990000-0000-7000-8000-000000000101
+
+curl -X PATCH \
+  -H 'Authorization: Bearer <OIDC_ACCESS_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{"cardPosition":4,"isTitleFight":true}' \
+  http://localhost:3000/v1/admin/events/01990000-0000-7000-8000-000000000101/fights/01990000-0000-7000-8000-000000000201
 ```
 
 ## Executar o Android
@@ -165,6 +171,7 @@ AGENTS.md                 regras duráveis para sessões de desenvolvimento
 - O cadastro de eventos exige organização existente, instante com offset explícito e timezone IANA, persiste o instante em UTC e inicia o evento como `SCHEDULED`.
 - A atualização administrativa de eventos aceita somente campos conhecidos, permite corrigir agenda/local/organização e alterar o status, e rejeita payload vazio.
 - O cadastro de lutas exige evento existente e posição positiva e única no card; resultado, método e rounds continuam fora do escopo.
+- A atualização de lutas valida o evento e a luta informados, permite corrigir somente os campos enviados e preserva a unicidade da posição no card.
 - Criação e auditoria usam a mesma transação; o log guarda o subject OIDC, a ação e a entidade, e triggers do PostgreSQL bloqueiam alterações, exclusões e truncamento.
 
 Mais detalhes em [arquitetura](docs/architecture.md), [segurança](docs/security.md) e [fontes de dados](docs/data-sources.md).

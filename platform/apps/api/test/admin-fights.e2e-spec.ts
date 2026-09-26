@@ -1,4 +1,4 @@
-import { ValidationPipe } from "@nestjs/common";
+import { BadRequestException, ValidationPipe } from "@nestjs/common";
 import type { ExecutionContext, INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
@@ -10,11 +10,12 @@ import type { AdminRequest } from "../src/modules/admin/auth/admin-principal";
 describe("Administrative fights endpoint", () => {
   let app: INestApplication;
   const create = jest.fn();
+  const update = jest.fn();
 
   beforeAll(async () => {
     const moduleBuilder = Test.createTestingModule({
       controllers: [AdminFightsController],
-      providers: [{ provide: AdminFightsService, useValue: { create } }],
+      providers: [{ provide: AdminFightsService, useValue: { create, update } }],
     });
     const moduleRef = await moduleBuilder
       .overrideGuard(AdminAuthGuard)
@@ -42,7 +43,10 @@ describe("Administrative fights endpoint", () => {
 
   afterAll(async () => app?.close());
 
-  beforeEach(() => create.mockReset());
+  beforeEach(() => {
+    create.mockReset();
+    update.mockReset();
+  });
 
   it("POST /v1/admin/events/:eventId/fights creates a normalized fight", async () => {
     const eventId = "01990000-0000-7000-8000-000000000101";
@@ -109,6 +113,95 @@ describe("Administrative fights endpoint", () => {
       .expect(400);
 
     expect(create).not.toHaveBeenCalled();
+  });
+
+  it("PATCH /v1/admin/events/:eventId/fights/:fightId updates a fight", async () => {
+    const eventId = "01990000-0000-7000-8000-000000000101";
+    const fightId = "01990000-0000-7000-8000-000000000205";
+    const fight = {
+      id: fightId,
+      eventId,
+      cardPosition: 4,
+      redCornerName: "[DEV] Taylor North",
+      blueCornerName: "[DEV] Cameron Vale",
+      weightClass: null,
+      isTitleFight: true,
+    };
+    update.mockResolvedValue(fight);
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    const response = await request(server)
+      .patch(`/v1/admin/events/${eventId}/fights/${fightId}`)
+      .send({
+        cardPosition: 4,
+        weightClass: null,
+        isTitleFight: true,
+      })
+      .expect(200);
+
+    expect(response.body).toEqual(fight);
+    expect(update).toHaveBeenCalledWith(
+      eventId,
+      fightId,
+      { cardPosition: 4, weightClass: null, isTitleFight: true },
+      "admin-test-subject",
+    );
+  });
+
+  it.each([
+    [
+      "not-a-uuid",
+      "01990000-0000-7000-8000-000000000205",
+      { cardPosition: 4 },
+    ],
+    [
+      "01990000-0000-7000-8000-000000000101",
+      "not-a-uuid",
+      { cardPosition: 4 },
+    ],
+    [
+      "01990000-0000-7000-8000-000000000101",
+      "01990000-0000-7000-8000-000000000205",
+      { cardPosition: 0 },
+    ],
+    [
+      "01990000-0000-7000-8000-000000000101",
+      "01990000-0000-7000-8000-000000000205",
+      { unexpected: true },
+    ],
+  ])(
+    "rejects invalid fight updates %#",
+    async (eventId, fightId, body) => {
+      const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+      await request(server)
+        .patch(`/v1/admin/events/${eventId}/fights/${fightId}`)
+        .send(body)
+        .expect(400);
+
+      expect(update).not.toHaveBeenCalled();
+    },
+  );
+
+  it("rejects a fight update without fields", async () => {
+    const eventId = "01990000-0000-7000-8000-000000000101";
+    const fightId = "01990000-0000-7000-8000-000000000205";
+    update.mockRejectedValue(
+      new BadRequestException("At least one fight field is required"),
+    );
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server)
+      .patch(`/v1/admin/events/${eventId}/fights/${fightId}`)
+      .send({})
+      .expect(400);
+
+    expect(update).toHaveBeenCalledWith(
+      eventId,
+      fightId,
+      {},
+      "admin-test-subject",
+    );
   });
 
   function validFight(): Record<string, unknown> {

@@ -1,4 +1,8 @@
-import { ConflictException, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from "@nestjs/common";
 import { Prisma } from "../../generated/prisma/client";
 import type { Fight } from "../../generated/prisma/client";
 import type { PrismaService } from "../../infrastructure/database/prisma.service";
@@ -123,6 +127,116 @@ describe("AdminFightsService", () => {
     const service = new AdminFightsService(prisma);
 
     await expect(createFight(service)).rejects.toBe(auditError);
+  });
+
+  it("updates and audits only the supplied fight fields", async () => {
+    const updatedModel = {
+      ...model,
+      cardPosition: 4,
+      weightClass: "Welterweight",
+      isTitleFight: true,
+    };
+    const update = jest.fn().mockResolvedValue(updatedModel);
+    const createAuditLog = jest.fn().mockResolvedValue({});
+    const prisma = prismaWithTransaction({
+      fight: { update },
+      adminAuditLog: { create: createAuditLog },
+    });
+    const service = new AdminFightsService(prisma);
+
+    await expect(
+      service.update(
+        model.eventId,
+        model.id,
+        {
+          cardPosition: 4,
+          weightClass: "Welterweight",
+          isTitleFight: true,
+        },
+        actorSubject,
+      ),
+    ).resolves.toMatchObject({
+      id: model.id,
+      eventId: model.eventId,
+      cardPosition: 4,
+      weightClass: "Welterweight",
+      isTitleFight: true,
+    });
+    expect(update).toHaveBeenCalledWith({
+      where: { id: model.id, eventId: model.eventId },
+      data: {
+        cardPosition: 4,
+        redCornerName: undefined,
+        blueCornerName: undefined,
+        weightClass: "Welterweight",
+        isTitleFight: true,
+      },
+    });
+    expect(createAuditLog).toHaveBeenCalledWith({
+      data: {
+        actorSubject,
+        action: "UPDATE",
+        entityType: "FIGHT",
+        entityId: model.id,
+      },
+    });
+  });
+
+  it("rejects an update without fields before opening a transaction", async () => {
+    const transaction = jest.fn();
+    const prisma = { $transaction: transaction } as unknown as PrismaService;
+    const service = new AdminFightsService(prisma);
+
+    await expect(
+      service.update(model.eventId, model.id, {}, actorSubject),
+    ).rejects.toThrow(BadRequestException);
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
+  it("reports a conflicting card position during update", async () => {
+    const duplicateError = new Prisma.PrismaClientKnownRequestError(
+      "Unique constraint failed",
+      {
+        code: "P2002",
+        clientVersion: "7.10.0",
+        meta: { target: ["eventId", "cardPosition"] },
+      },
+    );
+    const prisma = prismaWithTransaction({
+      fight: { update: jest.fn().mockRejectedValue(duplicateError) },
+      adminAuditLog: { create: jest.fn() },
+    });
+    const service = new AdminFightsService(prisma);
+
+    await expect(
+      service.update(
+        model.eventId,
+        model.id,
+        { cardPosition: 1 },
+        actorSubject,
+      ),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it("does not update a fight through a different event", async () => {
+    const notFoundError = new Prisma.PrismaClientKnownRequestError(
+      "Record not found",
+      { code: "P2025", clientVersion: "7.10.0" },
+    );
+    const prisma = prismaWithTransaction({
+      fight: { update: jest.fn().mockRejectedValue(notFoundError) },
+      adminAuditLog: { create: jest.fn() },
+    });
+    const service = new AdminFightsService(prisma);
+
+    await expect(
+      service.update(
+        model.eventId,
+        model.id,
+        { redCornerName: "[DEV] Updated Fighter" },
+        actorSubject,
+      ),
+    ).rejects.toThrow("Fight not found for this event");
   });
 
   function createFight(service: AdminFightsService): Promise<unknown> {

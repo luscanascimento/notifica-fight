@@ -32,6 +32,7 @@ describe("Administrative access endpoint", () => {
   const createFight = jest.fn();
   const createOrganization = jest.fn();
   const updateEvent = jest.fn();
+  const updateFight = jest.fn();
 
   beforeAll(async () => {
     const keyPair = await generateKeyPair("RS256");
@@ -75,7 +76,7 @@ describe("Administrative access endpoint", () => {
         },
         {
           provide: AdminFightsService,
-          useValue: { create: createFight },
+          useValue: { create: createFight, update: updateFight },
         },
         {
           provide: AdminOrganizationsService,
@@ -135,6 +136,19 @@ describe("Administrative access endpoint", () => {
       .expect(401);
 
     expect(updateEvent).not.toHaveBeenCalled();
+  });
+
+  it("protects fight updates with the same bearer guard", async () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server)
+      .patch(
+        "/v1/admin/events/01990000-0000-7000-8000-000000000101/fights/01990000-0000-7000-8000-000000000205",
+      )
+      .send({ cardPosition: 4 })
+      .expect(401);
+
+    expect(updateFight).not.toHaveBeenCalled();
   });
 
   it("rejects a token with the wrong audience", async () => {

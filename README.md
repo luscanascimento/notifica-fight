@@ -4,7 +4,7 @@ Aplicativo Android para consultar eventos e cards de esportes de combate. A entr
 
 `PostgreSQL -> NestJS -> REST -> Android -> Room -> ViewModel -> Compose`
 
-Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais. A API já possui a fundação de acesso administrativo via OIDC, mas ainda não expõe mutações.
+Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais. A API possui acesso administrativo via OIDC e permite cadastrar organizações; as demais mutações administrativas ainda não fazem parte desta entrega.
 
 ## Stack atual
 
@@ -57,6 +57,12 @@ Para verificar uma integração administrativa, configure um cliente OIDC para a
 ```bash
 curl -H 'Authorization: Bearer <OIDC_ACCESS_TOKEN>' \
   http://localhost:3000/v1/admin/access
+
+curl -X POST \
+  -H 'Authorization: Bearer <OIDC_ACCESS_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{"code":"PFL","name":"Professional Fighters League"}' \
+  http://localhost:3000/v1/admin/organizations
 ```
 
 ## Executar o Android
@@ -137,5 +143,6 @@ AGENTS.md                 regras duráveis para sessões de desenvolvimento
 - Timestamps vêm da API em UTC e são exibidos no fuso local do aparelho.
 - Cleartext fica bloqueado em release; somente o endereço do emulador é liberado na variante debug.
 - Rotas administrativas validam assinatura RS256 via JWKS, issuer, audience, expiração e role no servidor.
+- O cadastro administrativo de organizações normaliza o código para maiúsculas, rejeita campos desconhecidos e retorna conflito para códigos duplicados.
 
 Mais detalhes em [arquitetura](docs/architecture.md), [segurança](docs/security.md) e [fontes de dados](docs/data-sources.md).

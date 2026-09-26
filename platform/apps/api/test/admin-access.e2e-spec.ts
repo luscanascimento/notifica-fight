@@ -11,6 +11,8 @@ import { createServer } from "node:http";
 import type { Server } from "node:http";
 import request from "supertest";
 import { AdminAccessController } from "../src/modules/admin/admin-access.controller";
+import { AdminOrganizationsController } from "../src/modules/admin/admin-organizations.controller";
+import { AdminOrganizationsService } from "../src/modules/admin/admin-organizations.service";
 import { AdminAuthGuard } from "../src/modules/admin/auth/admin-auth.guard";
 import { OidcTokenVerifier } from "../src/modules/admin/auth/oidc-token-verifier";
 
@@ -22,6 +24,7 @@ describe("Administrative access endpoint", () => {
   let app: INestApplication;
   let jwksServer: Server;
   let privateKey: KeyLike;
+  const createOrganization = jest.fn();
 
   beforeAll(async () => {
     const keyPair = await generateKeyPair("RS256");
@@ -50,10 +53,14 @@ describe("Administrative access endpoint", () => {
       OIDC_ADMIN_ROLE: adminRole,
     };
     const moduleRef = await Test.createTestingModule({
-      controllers: [AdminAccessController],
+      controllers: [AdminAccessController, AdminOrganizationsController],
       providers: [
         AdminAuthGuard,
         OidcTokenVerifier,
+        {
+          provide: AdminOrganizationsService,
+          useValue: { create: createOrganization },
+        },
         {
           provide: ConfigService,
           useValue: { get: (key: string): string => configuration[key] ?? "" },
@@ -77,6 +84,17 @@ describe("Administrative access endpoint", () => {
     const server = app.getHttpServer() as Parameters<typeof request>[0];
 
     await request(server).get("/v1/admin/access").expect(401);
+  });
+
+  it("protects administrative mutations with the same bearer guard", async () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server)
+      .post("/v1/admin/organizations")
+      .send({ code: "PFL", name: "Professional Fighters League" })
+      .expect(401);
+
+    expect(createOrganization).not.toHaveBeenCalled();
   });
 
   it("rejects a token with the wrong audience", async () => {

@@ -4,7 +4,7 @@ Aplicativo Android para consultar eventos e cards de esportes de combate. A entr
 
 `PostgreSQL -> NestJS -> REST -> Android -> Room -> ViewModel -> Compose`
 
-Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais.
+Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais. A API já possui a fundação de acesso administrativo via OIDC, mas ainda não expõe mutações.
 
 ## Stack atual
 
@@ -51,6 +51,13 @@ curl http://localhost:3000/v1/events/01990000-0000-7000-8000-000000000101/card
 ```
 
 Swagger fica disponível em `http://localhost:3000/docs` no ambiente de desenvolvimento. Os seeds usam o prefixo `[DEV]` e não representam eventos reais.
+
+Para verificar uma integração administrativa, configure um cliente OIDC para a audiência da API e envie um access token com a role configurada no claim `roles`:
+
+```bash
+curl -H 'Authorization: Bearer <OIDC_ACCESS_TOKEN>' \
+  http://localhost:3000/v1/admin/access
+```
 
 ## Executar o Android
 
@@ -104,6 +111,10 @@ cd android
 | `CORS_ORIGINS` | não | Origins web permitidas, separadas por vírgula. Vazio nega CORS. |
 | `LOG_LEVEL` | não | Nível dos logs estruturados. |
 | `SWAGGER_ENABLED` | não | Habilita `/docs`; por padrão desabilitado em produção. |
+| `OIDC_ISSUER_URL` | sim | Issuer exato esperado nos access tokens administrativos. |
+| `OIDC_AUDIENCE` | sim | Audience da API esperada no token. |
+| `OIDC_JWKS_URL` | sim | Endpoint HTTPS confiável que publica as chaves de assinatura. |
+| `OIDC_ADMIN_ROLE` | sim | Role obrigatória no claim `roles` para acessar `/v1/admin`. |
 
 Nunca use as credenciais locais do Compose em produção.
 
@@ -125,5 +136,6 @@ AGENTS.md                 regras duráveis para sessões de desenvolvimento
 - Room é a fonte observada pela UI; Retrofit apenas atualiza o cache.
 - Timestamps vêm da API em UTC e são exibidos no fuso local do aparelho.
 - Cleartext fica bloqueado em release; somente o endereço do emulador é liberado na variante debug.
+- Rotas administrativas validam assinatura RS256 via JWKS, issuer, audience, expiração e role no servidor.
 
 Mais detalhes em [arquitetura](docs/architecture.md), [segurança](docs/security.md) e [fontes de dados](docs/data-sources.md).

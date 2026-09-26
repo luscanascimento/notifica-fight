@@ -7,6 +7,10 @@ export interface EnvironmentVariables {
   CORS_ORIGINS: string;
   LOG_LEVEL: string;
   SWAGGER_ENABLED: boolean;
+  OIDC_ISSUER_URL: string;
+  OIDC_AUDIENCE: string;
+  OIDC_JWKS_URL: string;
+  OIDC_ADMIN_ROLE: string;
 }
 
 function requiredString(
@@ -27,6 +31,32 @@ function parseBoolean(value: unknown, fallback: boolean): boolean {
   throw new Error("Boolean environment values must be 'true' or 'false'");
 }
 
+function requiredHttpsUrl(
+  values: Record<string, unknown>,
+  key: string,
+  nodeEnv: NodeEnvironment,
+): string {
+  const value = requiredString(values, key);
+  let url: URL;
+
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`${key} must be a valid URL`);
+  }
+
+  const isLoopback = ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
+  const allowsLocalHttp = nodeEnv !== "production" && isLoopback;
+  if (url.protocol !== "https:" && !(url.protocol === "http:" && allowsLocalHttp)) {
+    throw new Error(`${key} must use HTTPS`);
+  }
+  if (url.username || url.password) {
+    throw new Error(`${key} must not contain credentials`);
+  }
+
+  return value;
+}
+
 export function validateEnvironment(
   values: Record<string, unknown>,
 ): EnvironmentVariables {
@@ -45,8 +75,10 @@ export function validateEnvironment(
     throw new Error("DATABASE_URL must be a PostgreSQL connection URL");
   }
 
+  const validatedNodeEnv = nodeEnv as NodeEnvironment;
+
   return {
-    NODE_ENV: nodeEnv as NodeEnvironment,
+    NODE_ENV: validatedNodeEnv,
     PORT: port,
     DATABASE_URL: databaseUrl,
     CORS_ORIGINS:
@@ -57,6 +89,18 @@ export function validateEnvironment(
       values["SWAGGER_ENABLED"],
       nodeEnv !== "production",
     ),
+    OIDC_ISSUER_URL: requiredHttpsUrl(
+      values,
+      "OIDC_ISSUER_URL",
+      validatedNodeEnv,
+    ),
+    OIDC_AUDIENCE: requiredString(values, "OIDC_AUDIENCE"),
+    OIDC_JWKS_URL: requiredHttpsUrl(
+      values,
+      "OIDC_JWKS_URL",
+      validatedNodeEnv,
+    ),
+    OIDC_ADMIN_ROLE: requiredString(values, "OIDC_ADMIN_ROLE"),
   };
 }
 

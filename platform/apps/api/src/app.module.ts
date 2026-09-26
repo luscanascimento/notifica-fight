@@ -9,6 +9,7 @@ import { validateEnvironment } from "./config/environment";
 import type { EnvironmentVariables } from "./config/environment";
 import { PrismaModule } from "./infrastructure/database/prisma.module";
 import { EventsModule } from "./modules/events/events.module";
+import { AdminModule } from "./modules/admin/admin.module";
 import { HealthModule } from "./modules/health/health.module";
 import { OrganizationsModule } from "./modules/organizations/organizations.module";
 
@@ -51,6 +52,7 @@ import { OrganizationsModule } from "./modules/organizations/organizations.modul
     }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     PrismaModule,
+    AdminModule,
     HealthModule,
     OrganizationsModule,
     EventsModule,

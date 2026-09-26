@@ -44,8 +44,17 @@ async function bootstrap(): Promise<void> {
   if (config.get("SWAGGER_ENABLED", { infer: true })) {
     const swaggerConfig = new DocumentBuilder()
       .setTitle("Notifica Fight API")
-      .setDescription("Versioned public API for combat-sports events")
+      .setDescription("Versioned API for combat-sports events and administration")
       .setVersion("1.0")
+      .addBearerAuth(
+        {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "OIDC access token for administrative endpoints",
+        },
+        "oidc",
+      )
       .build();
     SwaggerModule.setup("docs", app, SwaggerModule.createDocument(app, swaggerConfig));
   }

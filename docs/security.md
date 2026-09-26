@@ -12,6 +12,9 @@
 - rate limit global simples de 100 requisições por minuto por cliente;
 - erros 5xx sem stack trace, SQL ou detalhes de infraestrutura na resposta;
 - logs JSON via Pino, request ID gerado pelo servidor e redaction de authorization, cookies e tokens;
+- `/v1/admin` protegido por JWT OIDC assinado com RS256, JWKS confiável, validação de issuer, audience, expiração e subject;
+- RBAC administrativo deny-by-default com role obrigatória no claim `roles` e distinção entre 401 e 403;
+- URLs OIDC obrigatoriamente HTTPS em produção; HTTP é aceito apenas para loopback em desenvolvimento e testes;
 - PostgreSQL e Redis publicados somente em `127.0.0.1` no Compose;
 - dependências fixadas por lockfile e auditoria pnpm sem vulnerabilidades conhecidas na entrega.
 
@@ -28,7 +31,9 @@
 
 ## Limites atuais
 
-Os endpoints de conteúdo são públicos e read-only. Não existe autenticação de usuário porque ela não é necessária no MVP. Operações administrativas ainda não existem; quando forem criadas, ficarão sob `/v1/admin`, com OIDC, MFA no identity provider, RBAC server-side deny-by-default e audit log append-only.
+Os endpoints de conteúdo são públicos e read-only. Não existe autenticação de usuário porque ela não é necessária no MVP. A rota administrativa atual apenas verifica o acesso; mutações ainda não existem. Quando forem criadas, permanecerão sob `/v1/admin`, com a validação OIDC e o RBAC atuais, MFA no identity provider e audit log append-only.
+
+O contrato inicial espera uma role de administração em um claim `roles` no nível superior do access token. O identity provider deve emitir esse claim para a audience exclusiva da API; tokens destinados a outra audience são rejeitados. Chaves simétricas, algoritmos diferentes de RS256 e chaves fornecidas pelo próprio header do token não são aceitos.
 
 TLS é responsabilidade do edge/reverse proxy em produção, mas autorização nunca dependerá do proxy. PostgreSQL e Redis não devem receber exposição pública. As credenciais em `docker-compose.yml` são exclusivamente locais e devem ser substituídas por secret management em qualquer ambiente implantado.
 

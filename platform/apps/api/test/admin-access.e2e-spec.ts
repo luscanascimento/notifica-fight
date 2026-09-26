@@ -31,6 +31,7 @@ describe("Administrative access endpoint", () => {
   const createEvent = jest.fn();
   const createFight = jest.fn();
   const createOrganization = jest.fn();
+  const updateEvent = jest.fn();
 
   beforeAll(async () => {
     const keyPair = await generateKeyPair("RS256");
@@ -70,7 +71,7 @@ describe("Administrative access endpoint", () => {
         OidcTokenVerifier,
         {
           provide: AdminEventsService,
-          useValue: { create: createEvent },
+          useValue: { create: createEvent, update: updateEvent },
         },
         {
           provide: AdminFightsService,
@@ -123,6 +124,17 @@ describe("Administrative access endpoint", () => {
       .expect(401);
 
     expect(create).not.toHaveBeenCalled();
+  });
+
+  it("protects event updates with the same bearer guard", async () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server)
+      .patch("/v1/admin/events/01990000-0000-7000-8000-000000000101")
+      .send({ status: "CANCELED" })
+      .expect(401);
+
+    expect(updateEvent).not.toHaveBeenCalled();
   });
 
   it("rejects a token with the wrong audience", async () => {

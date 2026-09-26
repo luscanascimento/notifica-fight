@@ -4,7 +4,7 @@ export type AdminAuditEntityType = "EVENT" | "FIGHT" | "ORGANIZATION";
 
 interface AdminAuditEntry {
   actorSubject: string;
-  action: "CREATE";
+  action: "CREATE" | "UPDATE";
   entityType: AdminAuditEntityType;
   entityId: string;
 }

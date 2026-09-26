@@ -1,4 +1,4 @@
-import { NotFoundException } from "@nestjs/common";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Prisma } from "../../generated/prisma/client";
 import type { Event, Organization } from "../../generated/prisma/client";
 import { EventStatus } from "../../generated/prisma/enums";
@@ -159,6 +159,112 @@ describe("AdminEventsService", () => {
         actorSubject,
       ),
     ).rejects.toBe(auditError);
+  });
+
+  it("updates and audits only the supplied event fields", async () => {
+    const updatedModel = {
+      ...model,
+      startTime: new Date("2030-01-13T01:00:00.000Z"),
+      status: EventStatus.POSTPONED,
+      city: null,
+    };
+    const update = jest.fn().mockResolvedValue(updatedModel);
+    const createAuditLog = jest.fn().mockResolvedValue({});
+    const prisma = prismaWithTransaction({
+      event: { update },
+      adminAuditLog: { create: createAuditLog },
+    });
+    const service = new AdminEventsService(prisma);
+
+    await expect(
+      service.update(
+        model.id,
+        {
+          startTime: "2030-01-12T20:00:00.000-05:00",
+          status: EventStatus.POSTPONED,
+          city: null,
+        },
+        actorSubject,
+      ),
+    ).resolves.toMatchObject({
+      id: model.id,
+      startTime: "2030-01-13T01:00:00.000Z",
+      status: EventStatus.POSTPONED,
+      city: null,
+    });
+    expect(update).toHaveBeenCalledWith({
+      where: { id: model.id },
+      data: {
+        organizationId: undefined,
+        name: undefined,
+        startTime: new Date("2030-01-13T01:00:00.000Z"),
+        timezone: undefined,
+        status: EventStatus.POSTPONED,
+        venueName: undefined,
+        city: null,
+        countryCode: undefined,
+      },
+      include: { organization: true },
+    });
+    expect(createAuditLog).toHaveBeenCalledWith({
+      data: {
+        actorSubject,
+        action: "UPDATE",
+        entityType: "EVENT",
+        entityId: model.id,
+      },
+    });
+  });
+
+  it("rejects an update without fields before opening a transaction", async () => {
+    const transaction = jest.fn();
+    const prisma = { $transaction: transaction } as unknown as PrismaService;
+    const service = new AdminEventsService(prisma);
+
+    await expect(service.update(model.id, {}, actorSubject)).rejects.toThrow(
+      BadRequestException,
+    );
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
+  it("reports an unknown event during update as not found", async () => {
+    const notFoundError = new Prisma.PrismaClientKnownRequestError(
+      "Record not found",
+      { code: "P2025", clientVersion: "7.10.0" },
+    );
+    const prisma = prismaWithTransaction({
+      event: { update: jest.fn().mockRejectedValue(notFoundError) },
+      adminAuditLog: { create: jest.fn() },
+    });
+    const service = new AdminEventsService(prisma);
+
+    await expect(
+      service.update(model.id, { name: model.name }, actorSubject),
+    ).rejects.toThrow("Event not found");
+  });
+
+  it("reports an unknown organization during update as not found", async () => {
+    const foreignKeyError = new Prisma.PrismaClientKnownRequestError(
+      "Foreign key constraint failed",
+      {
+        code: "P2003",
+        clientVersion: "7.10.0",
+        meta: { field_name: "Event_organizationId_fkey" },
+      },
+    );
+    const prisma = prismaWithTransaction({
+      event: { update: jest.fn().mockRejectedValue(foreignKeyError) },
+      adminAuditLog: { create: jest.fn() },
+    });
+    const service = new AdminEventsService(prisma);
+
+    await expect(
+      service.update(
+        model.id,
+        { organizationId: organization.id },
+        actorSubject,
+      ),
+    ).rejects.toThrow("Organization not found");
   });
 
   function prismaWithTransaction(transaction: object): PrismaService {

@@ -239,6 +239,73 @@ describe("AdminFightsService", () => {
     ).rejects.toThrow("Fight not found for this event");
   });
 
+  it("removes and audits a fight that belongs to the event", async () => {
+    const remove = jest.fn().mockResolvedValue(model);
+    const createAuditLog = jest.fn().mockResolvedValue({});
+    const prisma = prismaWithTransaction({
+      fight: { delete: remove },
+      adminAuditLog: { create: createAuditLog },
+    });
+    const service = new AdminFightsService(prisma);
+
+    await expect(
+      service.remove(model.eventId, model.id, actorSubject),
+    ).resolves.toBeUndefined();
+    expect(remove).toHaveBeenCalledWith({
+      where: { id: model.id, eventId: model.eventId },
+    });
+    expect(createAuditLog).toHaveBeenCalledWith({
+      data: {
+        actorSubject,
+        action: "DELETE",
+        entityType: "FIGHT",
+        entityId: model.id,
+      },
+    });
+  });
+
+  it("does not remove a fight through a different event", async () => {
+    const notFoundError = new Prisma.PrismaClientKnownRequestError(
+      "Record not found",
+      { code: "P2025", clientVersion: "7.10.0" },
+    );
+    const prisma = prismaWithTransaction({
+      fight: { delete: jest.fn().mockRejectedValue(notFoundError) },
+      adminAuditLog: { create: jest.fn() },
+    });
+    const service = new AdminFightsService(prisma);
+
+    await expect(
+      service.remove(model.eventId, model.id, actorSubject),
+    ).rejects.toThrow("Fight not found for this event");
+  });
+
+  it("does not hide unexpected errors while removing a fight", async () => {
+    const databaseError = new Error("database unavailable");
+    const prisma = prismaWithTransaction({
+      fight: { delete: jest.fn().mockRejectedValue(databaseError) },
+      adminAuditLog: { create: jest.fn() },
+    });
+    const service = new AdminFightsService(prisma);
+
+    await expect(
+      service.remove(model.eventId, model.id, actorSubject),
+    ).rejects.toBe(databaseError);
+  });
+
+  it("fails fight removal when the audit record cannot be written", async () => {
+    const auditError = new Error("audit unavailable");
+    const prisma = prismaWithTransaction({
+      fight: { delete: jest.fn().mockResolvedValue(model) },
+      adminAuditLog: { create: jest.fn().mockRejectedValue(auditError) },
+    });
+    const service = new AdminFightsService(prisma);
+
+    await expect(
+      service.remove(model.eventId, model.id, actorSubject),
+    ).rejects.toBe(auditError);
+  });
+
   function createFight(service: AdminFightsService): Promise<unknown> {
     return service.create(
       model.eventId,

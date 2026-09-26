@@ -1,6 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -14,6 +17,7 @@ import {
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -73,5 +77,23 @@ export class AdminFightsController {
       input,
       actorSubject,
     );
+  }
+
+  @Delete(":fightId")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: "Remove a fight from an event card" })
+  @ApiParam({ name: "eventId", format: "uuid" })
+  @ApiParam({ name: "fightId", format: "uuid" })
+  @ApiNoContentResponse({ description: "Fight removed" })
+  @ApiBadRequestResponse({ description: "Invalid event ID or fight ID" })
+  @ApiUnauthorizedResponse({ description: "Bearer token is missing or invalid" })
+  @ApiForbiddenResponse({ description: "Token does not grant the admin role" })
+  @ApiNotFoundResponse({ description: "Fight not found for this event" })
+  remove(
+    @Param("eventId", new ParseUUIDPipe()) eventId: string,
+    @Param("fightId", new ParseUUIDPipe()) fightId: string,
+    @AdminSubject() actorSubject: string,
+  ): Promise<void> {
+    return this.adminFightsService.remove(eventId, fightId, actorSubject);
   }
 }

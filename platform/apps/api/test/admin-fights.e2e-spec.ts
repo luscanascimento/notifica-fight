@@ -10,12 +10,15 @@ import type { AdminRequest } from "../src/modules/admin/auth/admin-principal";
 describe("Administrative fights endpoint", () => {
   let app: INestApplication;
   const create = jest.fn();
+  const remove = jest.fn();
   const update = jest.fn();
 
   beforeAll(async () => {
     const moduleBuilder = Test.createTestingModule({
       controllers: [AdminFightsController],
-      providers: [{ provide: AdminFightsService, useValue: { create, update } }],
+      providers: [
+        { provide: AdminFightsService, useValue: { create, remove, update } },
+      ],
     });
     const moduleRef = await moduleBuilder
       .overrideGuard(AdminAuthGuard)
@@ -45,6 +48,7 @@ describe("Administrative fights endpoint", () => {
 
   beforeEach(() => {
     create.mockReset();
+    remove.mockReset();
     update.mockReset();
   });
 
@@ -202,6 +206,37 @@ describe("Administrative fights endpoint", () => {
       {},
       "admin-test-subject",
     );
+  });
+
+  it("DELETE /v1/admin/events/:eventId/fights/:fightId removes a fight", async () => {
+    const eventId = "01990000-0000-7000-8000-000000000101";
+    const fightId = "01990000-0000-7000-8000-000000000205";
+    remove.mockResolvedValue(undefined);
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    const response = await request(server)
+      .delete(`/v1/admin/events/${eventId}/fights/${fightId}`)
+      .expect(204);
+
+    expect(response.body).toEqual({});
+    expect(remove).toHaveBeenCalledWith(
+      eventId,
+      fightId,
+      "admin-test-subject",
+    );
+  });
+
+  it.each([
+    ["not-a-uuid", "01990000-0000-7000-8000-000000000205"],
+    ["01990000-0000-7000-8000-000000000101", "not-a-uuid"],
+  ])("rejects invalid fight removals %#", async (eventId, fightId) => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server)
+      .delete(`/v1/admin/events/${eventId}/fights/${fightId}`)
+      .expect(400);
+
+    expect(remove).not.toHaveBeenCalled();
   });
 
   function validFight(): Record<string, unknown> {

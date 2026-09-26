@@ -99,4 +99,32 @@ export class AdminFightsService {
       throw error;
     }
   }
+
+  async remove(
+    eventId: string,
+    fightId: string,
+    actorSubject: string,
+  ): Promise<void> {
+    try {
+      await this.prisma.$transaction(async (transaction) => {
+        const fight = await transaction.fight.delete({
+          where: { id: fightId, eventId },
+        });
+        await recordAdminAuditLog(transaction, {
+          actorSubject,
+          action: "DELETE",
+          entityType: "FIGHT",
+          entityId: fight.id,
+        });
+      });
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        throw new NotFoundException("Fight not found for this event");
+      }
+      throw error;
+    }
+  }
 }

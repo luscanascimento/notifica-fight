@@ -31,7 +31,7 @@
 
 ## Limites atuais
 
-Os endpoints de conteúdo são públicos e read-only. Não existe autenticação de usuário porque ela não é necessária no MVP. A primeira mutação administrativa cadastra organizações e permanece sob `/v1/admin`, com a validação OIDC e o RBAC atuais. MFA deve ser exigido no identity provider. O audit log append-only é a próxima etapa de segurança antes de ampliar a superfície administrativa.
+Os endpoints de conteúdo são públicos e read-only. Não existe autenticação de usuário porque ela não é necessária no MVP. As mutações administrativas atuais cadastram organizações e eventos agendados e permanecem sob `/v1/admin`, com a validação OIDC e o RBAC atuais. MFA deve ser exigido no identity provider. O audit log append-only é a próxima etapa de segurança antes de ampliar novamente a superfície administrativa.
 
 O contrato inicial espera uma role de administração em um claim `roles` no nível superior do access token. O identity provider deve emitir esse claim para a audience exclusiva da API; tokens destinados a outra audience são rejeitados. Chaves simétricas, algoritmos diferentes de RS256 e chaves fornecidas pelo próprio header do token não são aceitos.
 

@@ -2,7 +2,7 @@
 
 ## Escopo atual
 
-A vertical slice atual entrega organizações, próximos eventos, detalhe e card de lutas. Dados fictícios entram por seed no PostgreSQL, são expostos pela API e sincronizados no Android. O acesso administrativo está protegido por OIDC e RBAC e sua primeira mutação permite cadastrar organizações. Provider externo, ingestão, worker, painel administrativo, resultados e notificações não fazem parte desta entrega.
+A vertical slice atual entrega organizações, próximos eventos, detalhe e card de lutas. Dados fictícios entram por seed no PostgreSQL, são expostos pela API e sincronizados no Android. O acesso administrativo está protegido por OIDC e RBAC e permite cadastrar organizações e eventos agendados. Provider externo, ingestão, worker, painel administrativo, resultados e notificações não fazem parte desta entrega.
 
 ```text
 PostgreSQL
@@ -39,7 +39,7 @@ Os módulos acessam Prisma diretamente porque as consultas atuais são simples. 
 
 O endpoint de próximos eventos retorna no máximo 50 registros `SCHEDULED` ou `POSTPONED`, em ordem cronológica. O detalhe por ID reutiliza o mesmo contrato público, valida o UUID e retorna 404 quando o evento não existe. O endpoint de card retorna as lutas por `cardPosition`, também valida o evento e representa apenas o anúncio da luta; resultado, método e rounds permanecem fora do escopo. Os contratos são mapeados para DTO e não expõem diretamente o modelo Prisma.
 
-`GET /v1/admin/access` valida a integração administrativa. `POST /v1/admin/organizations` cadastra uma organização com contrato explícito, normaliza o código para maiúsculas e retorna 409 se ele já existir. Ambas as rotas usam o mesmo guard, que exige bearer token assinado com RS256 por uma chave do JWKS configurado, além de `iss`, `aud`, `sub`, `exp` e a role administrativa no claim `roles`. Falhas criptográficas ou de claims retornam 401; identidade autenticada sem a role retorna 403. As URLs OIDC devem usar HTTPS em produção, e o material privado permanece exclusivamente no identity provider.
+`GET /v1/admin/access` valida a integração administrativa. `POST /v1/admin/organizations` cadastra uma organização com contrato explícito, normaliza o código para maiúsculas e retorna 409 se ele já existir. `POST /v1/admin/events` cria um evento `SCHEDULED`, exige uma organização existente, valida o instante com offset e o timezone IANA e persiste o instante em UTC. As rotas usam o mesmo guard, que exige bearer token assinado com RS256 por uma chave do JWKS configurado, além de `iss`, `aud`, `sub`, `exp` e a role administrativa no claim `roles`. Falhas criptográficas ou de claims retornam 401; identidade autenticada sem a role retorna 403. As URLs OIDC devem usar HTTPS em produção, e o material privado permanece exclusivamente no identity provider.
 
 ## Android
 
@@ -71,4 +71,4 @@ Estados da tela:
 
 ## Próximos passos
 
-A ordem preservada é: completar as mutações essenciais do admin básico, adicionar audit log append-only e somente então integrar o primeiro provider e pipeline de ingestão. Worker/BullMQ e Redis entram quando existir job assíncrono real; resultados entram após existir fonte e regras confiáveis para esse dado, e FCM entra na etapa de registro de dispositivos e alertas.
+Com a criação básica de organizações e eventos disponível, o próximo passo é adicionar audit log append-only antes de ampliar as mutações administrativas ou integrar o primeiro provider e pipeline de ingestão. Worker/BullMQ e Redis entram quando existir job assíncrono real; resultados entram após existir fonte e regras confiáveis para esse dado, e FCM entra na etapa de registro de dispositivos e alertas.

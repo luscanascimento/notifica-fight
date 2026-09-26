@@ -11,6 +11,8 @@ import { createServer } from "node:http";
 import type { Server } from "node:http";
 import request from "supertest";
 import { AdminAccessController } from "../src/modules/admin/admin-access.controller";
+import { AdminEventsController } from "../src/modules/admin/admin-events.controller";
+import { AdminEventsService } from "../src/modules/admin/admin-events.service";
 import { AdminOrganizationsController } from "../src/modules/admin/admin-organizations.controller";
 import { AdminOrganizationsService } from "../src/modules/admin/admin-organizations.service";
 import { AdminAuthGuard } from "../src/modules/admin/auth/admin-auth.guard";
@@ -24,6 +26,7 @@ describe("Administrative access endpoint", () => {
   let app: INestApplication;
   let jwksServer: Server;
   let privateKey: KeyLike;
+  const createEvent = jest.fn();
   const createOrganization = jest.fn();
 
   beforeAll(async () => {
@@ -53,10 +56,18 @@ describe("Administrative access endpoint", () => {
       OIDC_ADMIN_ROLE: adminRole,
     };
     const moduleRef = await Test.createTestingModule({
-      controllers: [AdminAccessController, AdminOrganizationsController],
+      controllers: [
+        AdminAccessController,
+        AdminEventsController,
+        AdminOrganizationsController,
+      ],
       providers: [
         AdminAuthGuard,
         OidcTokenVerifier,
+        {
+          provide: AdminEventsService,
+          useValue: { create: createEvent },
+        },
         {
           provide: AdminOrganizationsService,
           useValue: { create: createOrganization },
@@ -86,15 +97,18 @@ describe("Administrative access endpoint", () => {
     await request(server).get("/v1/admin/access").expect(401);
   });
 
-  it("protects administrative mutations with the same bearer guard", async () => {
+  it.each([
+    ["/v1/admin/events", createEvent],
+    ["/v1/admin/organizations", createOrganization],
+  ])("protects %s with the same bearer guard", async (path, create) => {
     const server = app.getHttpServer() as Parameters<typeof request>[0];
 
     await request(server)
-      .post("/v1/admin/organizations")
-      .send({ code: "PFL", name: "Professional Fighters League" })
+      .post(path)
+      .send({})
       .expect(401);
 
-    expect(createOrganization).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
   });
 
   it("rejects a token with the wrong audience", async () => {

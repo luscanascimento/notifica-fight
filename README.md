@@ -4,7 +4,7 @@ Aplicativo Android para consultar eventos e cards de esportes de combate. A entr
 
 `PostgreSQL -> NestJS -> REST -> Android -> Room -> ViewModel -> Compose`
 
-Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais. A API possui acesso administrativo via OIDC e permite cadastrar organizações; as demais mutações administrativas ainda não fazem parte desta entrega.
+Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais. A API possui acesso administrativo via OIDC e permite cadastrar organizações e eventos agendados; as demais mutações administrativas ainda não fazem parte desta entrega.
 
 ## Stack atual
 
@@ -63,6 +63,12 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"code":"PFL","name":"Professional Fighters League"}' \
   http://localhost:3000/v1/admin/organizations
+
+curl -X POST \
+  -H 'Authorization: Bearer <OIDC_ACCESS_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{"organizationId":"01990000-0000-7000-8000-000000000001","name":"[DEV] Example Event","startTime":"2030-01-12T23:00:00.000Z","timezone":"America/New_York","city":"Example City","countryCode":"US"}' \
+  http://localhost:3000/v1/admin/events
 ```
 
 ## Executar o Android
@@ -144,5 +150,6 @@ AGENTS.md                 regras duráveis para sessões de desenvolvimento
 - Cleartext fica bloqueado em release; somente o endereço do emulador é liberado na variante debug.
 - Rotas administrativas validam assinatura RS256 via JWKS, issuer, audience, expiração e role no servidor.
 - O cadastro administrativo de organizações normaliza o código para maiúsculas, rejeita campos desconhecidos e retorna conflito para códigos duplicados.
+- O cadastro de eventos exige organização existente, instante com offset explícito e timezone IANA, persiste o instante em UTC e inicia o evento como `SCHEDULED`.
 
 Mais detalhes em [arquitetura](docs/architecture.md), [segurança](docs/security.md) e [fontes de dados](docs/data-sources.md).

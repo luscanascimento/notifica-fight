@@ -4,7 +4,7 @@ Aplicativo Android para consultar eventos e cards de esportes de combate. A entr
 
 `PostgreSQL -> NestJS -> REST -> Android -> Room -> ViewModel -> Compose`
 
-Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais. A API possui acesso administrativo via OIDC, permite cadastrar, corrigir e remover organizações sem eventos, além de manter eventos agendados e lutas dos cards, e registra essas mutações em audit log append-only; as demais mutações administrativas ainda não fazem parte desta entrega.
+Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais. A API possui acesso administrativo via OIDC, permite cadastrar, corrigir e remover organizações, eventos agendados e lutas dos cards, e registra essas mutações em audit log append-only; as demais mutações administrativas ainda não fazem parte desta entrega.
 
 ## Stack atual
 
@@ -101,6 +101,10 @@ curl -X PATCH \
 curl -X DELETE \
   -H 'Authorization: Bearer <OIDC_ACCESS_TOKEN>' \
   http://localhost:3000/v1/admin/events/01990000-0000-7000-8000-000000000101/fights/01990000-0000-7000-8000-000000000201
+
+curl -X DELETE \
+  -H 'Authorization: Bearer <OIDC_ACCESS_TOKEN>' \
+  http://localhost:3000/v1/admin/events/01990000-0000-7000-8000-000000000101
 ```
 
 ## Executar o Android
@@ -185,6 +189,7 @@ AGENTS.md                 regras duráveis para sessões de desenvolvimento
 - A remoção administrativa de organizações é permitida somente quando não existem eventos vinculados.
 - O cadastro de eventos exige organização existente, instante com offset explícito e timezone IANA, persiste o instante em UTC e inicia o evento como `SCHEDULED`.
 - A atualização administrativa de eventos aceita somente campos conhecidos, permite corrigir agenda/local/organização e alterar o status, e rejeita payload vazio.
+- A remoção administrativa de um evento também remove seu card por meio da constraint de cascata do banco; eventos reais cancelados devem usar o status `CANCELED`.
 - O cadastro de lutas exige evento existente e posição positiva e única no card; resultado, método e rounds continuam fora do escopo.
 - A atualização de lutas valida o evento e a luta informados, permite corrigir somente os campos enviados e preserva a unicidade da posição no card.
 - A remoção de lutas confirma que a luta pertence ao evento informado.

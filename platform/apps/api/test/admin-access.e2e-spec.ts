@@ -31,6 +31,7 @@ describe("Administrative access endpoint", () => {
   const createEvent = jest.fn();
   const createFight = jest.fn();
   const createOrganization = jest.fn();
+  const removeEvent = jest.fn();
   const removeFight = jest.fn();
   const removeOrganization = jest.fn();
   const updateEvent = jest.fn();
@@ -75,7 +76,11 @@ describe("Administrative access endpoint", () => {
         OidcTokenVerifier,
         {
           provide: AdminEventsService,
-          useValue: { create: createEvent, update: updateEvent },
+          useValue: {
+            create: createEvent,
+            remove: removeEvent,
+            update: updateEvent,
+          },
         },
         {
           provide: AdminFightsService,
@@ -185,6 +190,16 @@ describe("Administrative access endpoint", () => {
       .expect(401);
 
     expect(removeFight).not.toHaveBeenCalled();
+  });
+
+  it("protects event removals with the same bearer guard", async () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server)
+      .delete("/v1/admin/events/01990000-0000-7000-8000-000000000104")
+      .expect(401);
+
+    expect(removeEvent).not.toHaveBeenCalled();
   });
 
   it("protects organization removals with the same bearer guard", async () => {

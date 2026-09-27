@@ -12,12 +12,15 @@ import type { AdminRequest } from "../src/modules/admin/auth/admin-principal";
 describe("Administrative events endpoint", () => {
   let app: INestApplication;
   const create = jest.fn();
+  const remove = jest.fn();
   const update = jest.fn();
 
   beforeAll(async () => {
     const moduleBuilder = Test.createTestingModule({
       controllers: [AdminEventsController],
-      providers: [{ provide: AdminEventsService, useValue: { create, update } }],
+      providers: [
+        { provide: AdminEventsService, useValue: { create, remove, update } },
+      ],
     });
     const moduleRef = await moduleBuilder
       .overrideGuard(AdminAuthGuard)
@@ -47,6 +50,7 @@ describe("Administrative events endpoint", () => {
 
   beforeEach(() => {
     create.mockReset();
+    remove.mockReset();
     update.mockReset();
   });
 
@@ -226,5 +230,26 @@ describe("Administrative events endpoint", () => {
       .expect(400);
 
     expect(update).toHaveBeenCalledWith(eventId, {}, "admin-test-subject");
+  });
+
+  it("DELETE /v1/admin/events/:eventId removes an event and its card", async () => {
+    const eventId = "01990000-0000-7000-8000-000000000104";
+    remove.mockResolvedValue(undefined);
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    const response = await request(server)
+      .delete(`/v1/admin/events/${eventId}`)
+      .expect(204);
+
+    expect(response.body).toEqual({});
+    expect(remove).toHaveBeenCalledWith(eventId, "admin-test-subject");
+  });
+
+  it("rejects an invalid event ID during removal", async () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server).delete("/v1/admin/events/not-a-uuid").expect(400);
+
+    expect(remove).not.toHaveBeenCalled();
   });
 });

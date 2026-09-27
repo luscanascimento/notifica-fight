@@ -98,4 +98,28 @@ export class AdminEventsService {
       throw error;
     }
   }
+
+  async remove(eventId: string, actorSubject: string): Promise<void> {
+    try {
+      await this.prisma.$transaction(async (transaction) => {
+        const event = await transaction.event.delete({
+          where: { id: eventId },
+        });
+        await recordAdminAuditLog(transaction, {
+          actorSubject,
+          action: "DELETE",
+          entityType: "EVENT",
+          entityId: event.id,
+        });
+      });
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        throw new NotFoundException("Event not found");
+      }
+      throw error;
+    }
+  }
 }

@@ -1,6 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -13,6 +16,7 @@ import {
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -61,5 +65,21 @@ export class AdminEventsController {
     @AdminSubject() actorSubject: string,
   ): Promise<EventResponseDto> {
     return this.adminEventsService.update(eventId, input, actorSubject);
+  }
+
+  @Delete(":eventId")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: "Remove a combat-sports event and its card" })
+  @ApiParam({ name: "eventId", format: "uuid" })
+  @ApiNoContentResponse({ description: "Event and its card removed" })
+  @ApiBadRequestResponse({ description: "Invalid event ID" })
+  @ApiUnauthorizedResponse({ description: "Bearer token is missing or invalid" })
+  @ApiForbiddenResponse({ description: "Token does not grant the admin role" })
+  @ApiNotFoundResponse({ description: "Event not found" })
+  remove(
+    @Param("eventId", new ParseUUIDPipe()) eventId: string,
+    @AdminSubject() actorSubject: string,
+  ): Promise<void> {
+    return this.adminEventsService.remove(eventId, actorSubject);
   }
 }

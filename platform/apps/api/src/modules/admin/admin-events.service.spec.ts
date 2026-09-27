@@ -267,6 +267,71 @@ describe("AdminEventsService", () => {
     ).rejects.toThrow("Organization not found");
   });
 
+  it("removes an event with its card and audits the event", async () => {
+    const remove = jest.fn().mockResolvedValue(model);
+    const createAuditLog = jest.fn().mockResolvedValue({});
+    const prisma = prismaWithTransaction({
+      event: { delete: remove },
+      adminAuditLog: { create: createAuditLog },
+    });
+    const service = new AdminEventsService(prisma);
+
+    await expect(
+      service.remove(model.id, actorSubject),
+    ).resolves.toBeUndefined();
+    expect(remove).toHaveBeenCalledWith({ where: { id: model.id } });
+    expect(createAuditLog).toHaveBeenCalledWith({
+      data: {
+        actorSubject,
+        action: "DELETE",
+        entityType: "EVENT",
+        entityId: model.id,
+      },
+    });
+  });
+
+  it("reports an unknown event during removal as not found", async () => {
+    const notFoundError = new Prisma.PrismaClientKnownRequestError(
+      "Record not found",
+      { code: "P2025", clientVersion: "7.10.0" },
+    );
+    const prisma = prismaWithTransaction({
+      event: { delete: jest.fn().mockRejectedValue(notFoundError) },
+      adminAuditLog: { create: jest.fn() },
+    });
+    const service = new AdminEventsService(prisma);
+
+    await expect(service.remove(model.id, actorSubject)).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it("does not hide unexpected database errors during removal", async () => {
+    const databaseError = new Error("database unavailable");
+    const prisma = prismaWithTransaction({
+      event: { delete: jest.fn().mockRejectedValue(databaseError) },
+      adminAuditLog: { create: jest.fn() },
+    });
+    const service = new AdminEventsService(prisma);
+
+    await expect(service.remove(model.id, actorSubject)).rejects.toBe(
+      databaseError,
+    );
+  });
+
+  it("fails event removal when its audit record cannot be written", async () => {
+    const auditError = new Error("audit unavailable");
+    const prisma = prismaWithTransaction({
+      event: { delete: jest.fn().mockResolvedValue(model) },
+      adminAuditLog: { create: jest.fn().mockRejectedValue(auditError) },
+    });
+    const service = new AdminEventsService(prisma);
+
+    await expect(service.remove(model.id, actorSubject)).rejects.toBe(
+      auditError,
+    );
+  });
+
   function prismaWithTransaction(transaction: object): PrismaService {
     return {
       $transaction: jest.fn(

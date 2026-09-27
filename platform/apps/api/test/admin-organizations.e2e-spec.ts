@@ -11,13 +11,17 @@ import type { AdminRequest } from "../src/modules/admin/auth/admin-principal";
 describe("Administrative organizations endpoint", () => {
   let app: INestApplication;
   const create = jest.fn();
+  const remove = jest.fn();
   const update = jest.fn();
 
   beforeAll(async () => {
     const moduleBuilder = Test.createTestingModule({
       controllers: [AdminOrganizationsController],
       providers: [
-        { provide: AdminOrganizationsService, useValue: { create, update } },
+        {
+          provide: AdminOrganizationsService,
+          useValue: { create, remove, update },
+        },
       ],
     });
     const moduleRef = await moduleBuilder
@@ -48,6 +52,7 @@ describe("Administrative organizations endpoint", () => {
 
   beforeEach(() => {
     create.mockReset();
+    remove.mockReset();
     update.mockReset();
   });
 
@@ -142,5 +147,31 @@ describe("Administrative organizations endpoint", () => {
       {},
       "admin-test-subject",
     );
+  });
+
+  it("DELETE /v1/admin/organizations/:id removes an organization", async () => {
+    const organizationId = "01990000-0000-7000-8000-000000000004";
+    remove.mockResolvedValue(undefined);
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    const response = await request(server)
+      .delete(`/v1/admin/organizations/${organizationId}`)
+      .expect(204);
+
+    expect(response.body).toEqual({});
+    expect(remove).toHaveBeenCalledWith(
+      organizationId,
+      "admin-test-subject",
+    );
+  });
+
+  it("rejects an invalid organization ID during removal", async () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server)
+      .delete("/v1/admin/organizations/not-a-uuid")
+      .expect(400);
+
+    expect(remove).not.toHaveBeenCalled();
   });
 });

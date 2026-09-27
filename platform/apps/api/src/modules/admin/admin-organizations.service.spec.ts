@@ -204,6 +204,91 @@ describe("AdminOrganizationsService", () => {
     ).rejects.toBe(auditError);
   });
 
+  it("removes and audits an organization without events", async () => {
+    const remove = jest.fn().mockResolvedValue(model);
+    const createAuditLog = jest.fn().mockResolvedValue({});
+    const prisma = prismaWithTransaction({
+      organization: { delete: remove },
+      adminAuditLog: { create: createAuditLog },
+    });
+    const service = new AdminOrganizationsService(prisma);
+
+    await expect(
+      service.remove(model.id, actorSubject),
+    ).resolves.toBeUndefined();
+    expect(remove).toHaveBeenCalledWith({ where: { id: model.id } });
+    expect(createAuditLog).toHaveBeenCalledWith({
+      data: {
+        actorSubject,
+        action: "DELETE",
+        entityType: "ORGANIZATION",
+        entityId: model.id,
+      },
+    });
+  });
+
+  it("reports a missing organization during removal", async () => {
+    const notFoundError = new Prisma.PrismaClientKnownRequestError(
+      "Record not found",
+      { code: "P2025", clientVersion: "7.10.0" },
+    );
+    const prisma = prismaWithTransaction({
+      organization: { delete: jest.fn().mockRejectedValue(notFoundError) },
+      adminAuditLog: { create: jest.fn() },
+    });
+    const service = new AdminOrganizationsService(prisma);
+
+    await expect(service.remove(model.id, actorSubject)).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it("rejects removal when the organization has events", async () => {
+    const foreignKeyError = new Prisma.PrismaClientKnownRequestError(
+      "Foreign key constraint failed",
+      {
+        code: "P2003",
+        clientVersion: "7.10.0",
+        meta: { field_name: "Event_organizationId_fkey" },
+      },
+    );
+    const prisma = prismaWithTransaction({
+      organization: { delete: jest.fn().mockRejectedValue(foreignKeyError) },
+      adminAuditLog: { create: jest.fn() },
+    });
+    const service = new AdminOrganizationsService(prisma);
+
+    await expect(service.remove(model.id, actorSubject)).rejects.toThrow(
+      ConflictException,
+    );
+  });
+
+  it("does not hide unexpected database errors during removal", async () => {
+    const databaseError = new Error("database unavailable");
+    const prisma = prismaWithTransaction({
+      organization: { delete: jest.fn().mockRejectedValue(databaseError) },
+      adminAuditLog: { create: jest.fn() },
+    });
+    const service = new AdminOrganizationsService(prisma);
+
+    await expect(service.remove(model.id, actorSubject)).rejects.toBe(
+      databaseError,
+    );
+  });
+
+  it("fails organization removal when its audit record cannot be written", async () => {
+    const auditError = new Error("audit unavailable");
+    const prisma = prismaWithTransaction({
+      organization: { delete: jest.fn().mockResolvedValue(model) },
+      adminAuditLog: { create: jest.fn().mockRejectedValue(auditError) },
+    });
+    const service = new AdminOrganizationsService(prisma);
+
+    await expect(service.remove(model.id, actorSubject)).rejects.toBe(
+      auditError,
+    );
+  });
+
   function prismaWithTransaction(transaction: object): PrismaService {
     return {
       $transaction: jest.fn(

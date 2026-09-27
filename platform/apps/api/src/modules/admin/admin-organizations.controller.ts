@@ -1,6 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -14,6 +17,7 @@ import {
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -69,6 +73,28 @@ export class AdminOrganizationsController {
     return this.adminOrganizationsService.update(
       organizationId,
       input,
+      actorSubject,
+    );
+  }
+
+  @Delete(":organizationId")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: "Remove a combat-sports organization" })
+  @ApiParam({ name: "organizationId", format: "uuid" })
+  @ApiNoContentResponse({ description: "Organization removed" })
+  @ApiBadRequestResponse({ description: "Invalid organization ID" })
+  @ApiUnauthorizedResponse({ description: "Bearer token is missing or invalid" })
+  @ApiForbiddenResponse({ description: "Token does not grant the admin role" })
+  @ApiNotFoundResponse({ description: "Organization not found" })
+  @ApiConflictResponse({
+    description: "Organization has events and cannot be removed",
+  })
+  remove(
+    @Param("organizationId", new ParseUUIDPipe()) organizationId: string,
+    @AdminSubject() actorSubject: string,
+  ): Promise<void> {
+    return this.adminOrganizationsService.remove(
+      organizationId,
       actorSubject,
     );
   }

@@ -32,6 +32,7 @@ describe("Administrative access endpoint", () => {
   const createFight = jest.fn();
   const createOrganization = jest.fn();
   const removeFight = jest.fn();
+  const removeOrganization = jest.fn();
   const updateEvent = jest.fn();
   const updateFight = jest.fn();
   const updateOrganization = jest.fn();
@@ -88,6 +89,7 @@ describe("Administrative access endpoint", () => {
           provide: AdminOrganizationsService,
           useValue: {
             create: createOrganization,
+            remove: removeOrganization,
             update: updateOrganization,
           },
         },
@@ -183,6 +185,18 @@ describe("Administrative access endpoint", () => {
       .expect(401);
 
     expect(removeFight).not.toHaveBeenCalled();
+  });
+
+  it("protects organization removals with the same bearer guard", async () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server)
+      .delete(
+        "/v1/admin/organizations/01990000-0000-7000-8000-000000000004",
+      )
+      .expect(401);
+
+    expect(removeOrganization).not.toHaveBeenCalled();
   });
 
   it("rejects a token with the wrong audience", async () => {

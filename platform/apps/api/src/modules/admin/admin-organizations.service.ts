@@ -80,4 +80,32 @@ export class AdminOrganizationsService {
       throw error;
     }
   }
+
+  async remove(organizationId: string, actorSubject: string): Promise<void> {
+    try {
+      await this.prisma.$transaction(async (transaction) => {
+        const organization = await transaction.organization.delete({
+          where: { id: organizationId },
+        });
+        await recordAdminAuditLog(transaction, {
+          actorSubject,
+          action: "DELETE",
+          entityType: "ORGANIZATION",
+          entityId: organization.id,
+        });
+      });
+    } catch (error: unknown) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          throw new NotFoundException("Organization not found");
+        }
+        if (error.code === "P2003") {
+          throw new ConflictException(
+            "Organization has events and cannot be removed",
+          );
+        }
+      }
+      throw error;
+    }
+  }
 }

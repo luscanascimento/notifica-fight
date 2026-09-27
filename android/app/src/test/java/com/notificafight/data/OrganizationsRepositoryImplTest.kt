@@ -45,6 +45,33 @@ class OrganizationsRepositoryImplTest {
         assertTrue(repository.refresh().isFailure)
         assertEquals(listOf(cached), dao.organizations.value)
     }
+
+    @Test
+    fun `refresh removes organizations that are absent remotely`() = runTest {
+        val retained = remoteOrganization()
+        val removed = OrganizationEntity(
+            id = "01990000-0000-7000-8000-000000000003",
+            code = "RWS",
+            name = "RWS",
+        )
+        val dao = FakeOrganizationDao(
+            listOf(
+                OrganizationEntity(retained.id, retained.code, retained.name),
+                removed,
+            ),
+        )
+        val repository = OrganizationsRepositoryImpl(
+            api = FakeOrganizationApi(listOf(retained)),
+            organizationDao = dao,
+        )
+
+        assertTrue(repository.refresh().isSuccess)
+
+        assertEquals(
+            listOf(OrganizationEntity(retained.id, retained.code, retained.name)),
+            dao.organizations.value,
+        )
+    }
 }
 
 private class FakeOrganizationApi(

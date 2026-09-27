@@ -71,6 +71,42 @@ class EventsRepositoryImplTest {
     }
 
     @Test
+    fun `upcoming refresh removes an event and its card when absent remotely`() = runTest {
+        val retainedEvent = remoteEvent().toEntityForTest()
+        val removedEvent = remoteEvent().copy(
+            id = "01990000-0000-7000-8000-000000000102",
+            name = "[DEV] Removed Event",
+        ).toEntityForTest()
+        val retainedFight = remoteFight(retainedEvent.id).toEntityForTest()
+        val removedFight = remoteFight(removedEvent.id).copy(
+            id = "01990000-0000-7000-8000-000000000202",
+        ).toEntityForTest()
+        val dao = FakeEventDao(
+            initial = listOf(retainedEvent, removedEvent),
+            initialFights = listOf(retainedFight, removedFight),
+        )
+        val repository = EventsRepositoryImpl(FakeEventApi(listOf(remoteEvent())), dao)
+
+        assertTrue(repository.refreshUpcoming().isSuccess)
+
+        assertEquals(listOf(retainedEvent), dao.events.value)
+        assertEquals(listOf(retainedFight), dao.fights.value)
+    }
+
+    @Test
+    fun `empty upcoming refresh clears cached events and cards`() = runTest {
+        val event = remoteEvent().toEntityForTest()
+        val fight = remoteFight(event.id).toEntityForTest()
+        val dao = FakeEventDao(listOf(event), listOf(fight))
+        val repository = EventsRepositoryImpl(FakeEventApi(emptyList()), dao)
+
+        assertTrue(repository.refreshUpcoming().isSuccess)
+
+        assertTrue(dao.events.value.isEmpty())
+        assertTrue(dao.fights.value.isEmpty())
+    }
+
+    @Test
     fun `refresh event validates and stores the requested event without clearing cache`() = runTest {
         val existing = remoteEvent().copy(
             id = "01990000-0000-7000-8000-000000000100",
@@ -130,7 +166,9 @@ class EventsRepositoryImplTest {
 
 private class FakeEventApi(
     private val response: List<RemoteEvent>,
-    private val cardResponse: List<RemoteFight> = listOf(remoteFight(response.single().id)),
+    private val cardResponse: List<RemoteFight> = response.firstOrNull()
+        ?.let { event -> listOf(remoteFight(event.id)) }
+        .orEmpty(),
 ) : EventApi {
     override suspend fun getUpcomingEvents(): List<RemoteEvent> = response
 

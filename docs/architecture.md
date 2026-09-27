@@ -62,7 +62,7 @@ Ao selecionar um evento, o app abre o detalhe e atualiza o evento e seu card. As
 
 A listagem de organizações possui cache próprio no Room. A migração da versão 1 para a versão 2 cria a nova tabela sem apagar os eventos previamente armazenados e aproveita os dados de organização já presentes nesse cache.
 
-A migração Room da versão 2 para a versão 3 adiciona as lutas com chave estrangeira para eventos. O refresh da listagem usa upsert para preservar cards de eventos que continuam futuros, enquanto a sincronização de um detalhe substitui atomicamente somente o card daquele evento.
+A migração Room da versão 2 para a versão 3 adiciona as lutas com chave estrangeira para eventos. O refresh da listagem usa upsert para preservar cards de eventos que continuam futuros, remove eventos ausentes da resposta válida e deixa a foreign key apagar seus cards em cascata. A sincronização de um detalhe substitui atomicamente somente o card daquele evento. O catálogo de organizações também substitui o cache apenas após validar toda a resposta.
 
 Estados da tela:
 

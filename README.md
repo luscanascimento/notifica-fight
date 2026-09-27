@@ -109,9 +109,15 @@ curl -X DELETE \
 
 ## Executar o Android
 
-Abra a pasta `android/` no Android Studio e execute a variante `debug` em um emulador. Por padrão, ela acessa `http://10.0.2.2:3000/`, o endereço do host visto pelo emulador Android.
+Abra a pasta `android/` no Android Studio e execute a variante `debug` em um emulador ou aparelho conectado por USB. Por padrão, ela acessa `http://127.0.0.1:3000/`. Antes de abrir o app, encaminhe essa porta pelo ADB (repita após reconectar ou reiniciar o dispositivo):
 
-Para usar outro endpoint de desenvolvimento HTTPS, defina em `~/.gradle/gradle.properties`:
+```powershell
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" reverse tcp:3000 tcp:3000
+```
+
+Esse encaminhamento também funciona quando a API roda no WSL e o Android Studio no Windows. Confirme-o com `adb reverse --list`; a saída deve conter `tcp:3000 tcp:3000`.
+
+Para usar outro endpoint de desenvolvimento, defina em `~/.gradle/gradle.properties`:
 
 ```properties
 NOTIFICA_DEBUG_API_BASE_URL=https://dev-api.example.com/
@@ -185,7 +191,7 @@ AGENTS.md                 regras duráveis para sessões de desenvolvimento
 - DTO público explícito evita expor modelos Prisma como contrato.
 - Room é a fonte observada pela UI; Retrofit apenas atualiza o cache.
 - Timestamps vêm da API em UTC e são exibidos no fuso local do aparelho.
-- Cleartext fica bloqueado em release; somente o endereço do emulador é liberado na variante debug.
+- Cleartext fica bloqueado em release; somente os endereços locais de desenvolvimento são liberados na variante debug.
 - Rotas administrativas validam assinatura RS256 via JWKS, issuer, audience, expiração e role no servidor.
 - O cadastro e a atualização administrativa de organizações normalizam o código para maiúsculas, rejeitam campos desconhecidos e retornam conflito para códigos duplicados; a atualização exige ao menos um campo.
 - A remoção administrativa de organizações é permitida somente quando não existem eventos vinculados.

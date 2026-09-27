@@ -11,7 +11,7 @@ val releaseApiBaseUrl = providers.gradleProperty("NOTIFICA_API_BASE_URL")
     .orElse("https://api.example.invalid/")
     .get()
 val debugApiBaseUrl = providers.gradleProperty("NOTIFICA_DEBUG_API_BASE_URL")
-    .orElse("http://10.0.2.2:3000/")
+    .orElse("http://127.0.0.1:3000/")
     .get()
 
 require(releaseApiBaseUrl.startsWith("https://") && releaseApiBaseUrl.endsWith('/')) {

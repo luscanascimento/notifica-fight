@@ -25,7 +25,7 @@
 - nenhuma credencial ou API key privada no APK;
 - endpoint configurável por build environment;
 - release aceita somente URL base HTTPS e bloqueia cleartext no manifest;
-- debug libera HTTP apenas para `10.0.2.2`, usado pelo emulador local;
+- debug libera HTTP apenas para loopback e `10.0.2.2`; o fluxo padrão usa loopback com encaminhamento explícito por ADB;
 - sem logging HTTP, evitando vazamento futuro de tokens ou payloads;
 - Room usa armazenamento privado do app;
 - backup e transferência dos dados do app estão desabilitados;

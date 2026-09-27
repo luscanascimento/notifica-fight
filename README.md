@@ -6,6 +6,21 @@ Aplicativo Android para consultar eventos e cards de esportes de combate. A entr
 
 Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais. A API possui acesso administrativo via OIDC, permite cadastrar, corrigir e remover organizações, eventos agendados e lutas dos cards, e registra essas mutações em audit log append-only; as demais mutações administrativas ainda não fazem parte desta entrega.
 
+## Status da fonte de dados
+
+O projeto está buscando uma API licenciada para substituir as fixtures `[DEV]`
+por agendas e cards reais. O Sportradar MMA API v2 é o candidato preferencial e
+um pedido comercial foi enviado em 27 de setembro de 2026; neste momento,
+aguardamos a confirmação de licença, cobertura, cache, território e custo. O
+SportsDataIO permanece como alternativa, e outras fontes autorizadas poderão ser
+avaliadas caso não haja resposta ou uma proposta compatível.
+
+Nenhum adapter ou segredo de provider será adicionado antes de uma autorização
+por escrito. Enquanto isso, o aplicativo continua operando apenas com fixtures
+fictícias e entrada administrativa/manual. Consulte a
+[avaliação dos providers](docs/provider-evaluation.md) e o
+[pedido comercial preparado](docs/provider-commercial-request.md).
+
 ## Stack atual
 
 - API: Node.js, TypeScript strict, NestJS, Prisma e PostgreSQL.

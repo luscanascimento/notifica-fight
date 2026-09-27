@@ -3,6 +3,13 @@
 Revisão realizada em 27 de setembro de 2026. Links, cobertura, limites e termos
 devem ser conferidos novamente antes de contratar ou integrar um provider.
 
+## Status do contato
+
+O pedido comercial ao Sportradar foi enviado pelo proprietário do produto em 27
+de setembro de 2026. O projeto aguarda resposta. Se o retorno demorar ou não
+autorizar o uso pretendido, o próximo candidato é o SportsDataIO, seguido por
+uma nova busca de fontes licenciadas; scraping não será usado como atalho.
+
 ## Decisão
 
 O [Sportradar MMA API v2](https://developer.sportradar.com/mma/reference/mma-overview)

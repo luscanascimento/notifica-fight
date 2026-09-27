@@ -69,3 +69,11 @@ jobs:
         with:
           cache-provider: basic
       - run: ./gradlew lintDebug testDebugUnitTest assembleDebug lintRelease assembleRelease
+      - name: Upload debug APK
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v7
+        with:
+          name: notifica-fight-debug-${{ github.sha }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7

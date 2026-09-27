@@ -34,6 +34,7 @@ describe("Administrative access endpoint", () => {
   const removeFight = jest.fn();
   const updateEvent = jest.fn();
   const updateFight = jest.fn();
+  const updateOrganization = jest.fn();
 
   beforeAll(async () => {
     const keyPair = await generateKeyPair("RS256");
@@ -85,7 +86,10 @@ describe("Administrative access endpoint", () => {
         },
         {
           provide: AdminOrganizationsService,
-          useValue: { create: createOrganization },
+          useValue: {
+            create: createOrganization,
+            update: updateOrganization,
+          },
         },
         {
           provide: ConfigService,
@@ -141,6 +145,19 @@ describe("Administrative access endpoint", () => {
       .expect(401);
 
     expect(updateEvent).not.toHaveBeenCalled();
+  });
+
+  it("protects organization updates with the same bearer guard", async () => {
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server)
+      .patch(
+        "/v1/admin/organizations/01990000-0000-7000-8000-000000000004",
+      )
+      .send({ name: "Updated organization" })
+      .expect(401);
+
+    expect(updateOrganization).not.toHaveBeenCalled();
   });
 
   it("protects fight updates with the same bearer guard", async () => {

@@ -33,7 +33,7 @@
 
 ## Limites atuais
 
-Os endpoints de conteúdo são públicos e read-only. Não existe autenticação de usuário porque ela não é necessária no MVP. As mutações administrativas atuais cadastram organizações, eventos agendados e lutas dos cards, permitem corrigir eventos e lutas e remover uma luta de um card; todas permanecem sob `/v1/admin`, com a validação OIDC, o RBAC e o audit log append-only atuais. MFA deve ser exigido no identity provider. Ainda não existe endpoint de consulta do audit log; o acesso operacional deve ocorrer com uma role PostgreSQL read-only separada até haver uma necessidade de produto para expô-lo na API.
+Os endpoints de conteúdo são públicos e read-only. Não existe autenticação de usuário porque ela não é necessária no MVP. As mutações administrativas atuais cadastram organizações, eventos agendados e lutas dos cards, permitem corrigir organizações, eventos e lutas e remover uma luta de um card; todas permanecem sob `/v1/admin`, com a validação OIDC, o RBAC e o audit log append-only atuais. MFA deve ser exigido no identity provider. Ainda não existe endpoint de consulta do audit log; o acesso operacional deve ocorrer com uma role PostgreSQL read-only separada até haver uma necessidade de produto para expô-lo na API.
 
 O contrato inicial espera uma role de administração em um claim `roles` no nível superior do access token. O identity provider deve emitir esse claim para a audience exclusiva da API; tokens destinados a outra audience são rejeitados. Chaves simétricas, algoritmos diferentes de RS256 e chaves fornecidas pelo próprio header do token não são aceitos.
 

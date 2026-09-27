@@ -4,7 +4,7 @@ Aplicativo Android para consultar eventos e cards de esportes de combate. A entr
 
 `PostgreSQL -> NestJS -> REST -> Android -> Room -> ViewModel -> Compose`
 
-Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais. A API possui acesso administrativo via OIDC, permite cadastrar organizações, eventos agendados e lutas dos cards e registra essas mutações em audit log append-only; as demais mutações administrativas ainda não fazem parte desta entrega.
+Não há login público, provider externo, scraping, placar ao vivo, apostas ou recursos sociais. A API possui acesso administrativo via OIDC, permite cadastrar e corrigir organizações, eventos agendados e lutas dos cards e registra essas mutações em audit log append-only; as demais mutações administrativas ainda não fazem parte desta entrega.
 
 ## Stack atual
 
@@ -63,6 +63,12 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"code":"PFL","name":"Professional Fighters League"}' \
   http://localhost:3000/v1/admin/organizations
+
+curl -X PATCH \
+  -H 'Authorization: Bearer <OIDC_ACCESS_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Professional Fighters League (PFL)"}' \
+  http://localhost:3000/v1/admin/organizations/01990000-0000-7000-8000-000000000001
 
 curl -X POST \
   -H 'Authorization: Bearer <OIDC_ACCESS_TOKEN>' \
@@ -171,7 +177,7 @@ AGENTS.md                 regras duráveis para sessões de desenvolvimento
 - Timestamps vêm da API em UTC e são exibidos no fuso local do aparelho.
 - Cleartext fica bloqueado em release; somente o endereço do emulador é liberado na variante debug.
 - Rotas administrativas validam assinatura RS256 via JWKS, issuer, audience, expiração e role no servidor.
-- O cadastro administrativo de organizações normaliza o código para maiúsculas, rejeita campos desconhecidos e retorna conflito para códigos duplicados.
+- O cadastro e a atualização administrativa de organizações normalizam o código para maiúsculas, rejeitam campos desconhecidos e retornam conflito para códigos duplicados; a atualização exige ao menos um campo.
 - O cadastro de eventos exige organização existente, instante com offset explícito e timezone IANA, persiste o instante em UTC e inicia o evento como `SCHEDULED`.
 - A atualização administrativa de eventos aceita somente campos conhecidos, permite corrigir agenda/local/organização e alterar o status, e rejeita payload vazio.
 - O cadastro de lutas exige evento existente e posição positiva e única no card; resultado, método e rounds continuam fora do escopo.

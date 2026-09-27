@@ -15,6 +15,8 @@ confirmação comercial dos direitos de exibição no aplicativo, preço, limite
 retenção. Não será criado adapter, migration, job ou segredo até essa aprovação.
 ONE Championship e RWS continuam no fluxo administrativo/manual porque não foi
 identificada uma API pública e autorizada para essas organizações nesta revisão.
+O [pedido comercial](provider-commercial-request.md) contém mensagens prontas e
+o critério de aceite para concluir essa aprovação.
 
 ## Comparação
 

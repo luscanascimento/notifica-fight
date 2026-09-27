@@ -6,6 +6,11 @@ Não há integração externa nesta vertical slice. Os três eventos e os nomes 
 
 Essa escolha valida o fluxo ponta a ponta antes de assumir custo operacional, contrato ou risco jurídico de um provider.
 
+A avaliação inicial dos candidatos e o gate necessário antes da integração
+estão registrados em [Avaliação do primeiro provider](provider-evaluation.md).
+O Sportradar MMA v2 é o candidato preferencial para avaliação comercial de UFC,
+mas ainda não está aprovado para integração.
+
 ## Política obrigatória
 
 A ordem de preferência para futuras integrações é:

@@ -73,4 +73,4 @@ Estados da tela:
 
 ## Próximos passos
 
-Antes de integrar o primeiro provider, a fonte precisa ser escolhida e aprovada conforme a política de autorização, termos, qualidade, limites e custo. Até essa decisão, o admin pode receber apenas operações manuais necessárias para manter eventos e cards corretos. Worker/BullMQ e Redis entram somente quando existir job assíncrono real; resultados entram após existir fonte e regras confiáveis para esse dado, e FCM entra na etapa de registro de dispositivos e alertas.
+O Sportradar MMA v2 foi selecionado como candidato preferencial, conforme a [avaliação do primeiro provider](provider-evaluation.md), mas a integração depende de aprovação comercial e dos direitos de exibição, cache e retenção. Até essa aprovação, o admin pode receber apenas operações manuais necessárias para manter eventos e cards corretos. Worker/BullMQ e Redis entram somente quando existir job assíncrono real; resultados entram após existir fonte e regras confiáveis para esse dado, e FCM entra na etapa de registro de dispositivos e alertas.

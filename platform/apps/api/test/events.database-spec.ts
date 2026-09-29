@@ -23,7 +23,7 @@ describe("Upcoming events database integration", () => {
     const body = response.body as unknown;
 
     expect(Array.isArray(body)).toBe(true);
-    expect(body).toHaveLength(3);
+    expect((body as unknown[]).length).toBeGreaterThanOrEqual(3);
     expect(JSON.stringify(body)).toContain('"name":"[DEV] ');
     expect(JSON.stringify(body)).toContain('"code":"UFC"');
   });

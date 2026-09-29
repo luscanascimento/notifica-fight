@@ -11,6 +11,7 @@ export interface EnvironmentVariables {
   OIDC_AUDIENCE: string;
   OIDC_JWKS_URL: string;
   OIDC_ADMIN_ROLE: string;
+  API_SPORTS_KEY: string;
 }
 
 function requiredString(
@@ -101,6 +102,7 @@ export function validateEnvironment(
       validatedNodeEnv,
     ),
     OIDC_ADMIN_ROLE: requiredString(values, "OIDC_ADMIN_ROLE"),
+    API_SPORTS_KEY: typeof values["API_SPORTS_KEY"] === "string" ? values["API_SPORTS_KEY"] : "",
   };
 }
 

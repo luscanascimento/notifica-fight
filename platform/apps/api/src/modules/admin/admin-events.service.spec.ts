@@ -18,6 +18,7 @@ describe("AdminEventsService", () => {
   const model: Event & { organization: Organization } = {
     id: "01990000-0000-7000-8000-000000000104",
     organizationId: organization.id,
+    externalId: null,
     name: "[DEV] Example Event",
     startTime: new Date("2030-01-12T23:00:00.000Z"),
     timezone: "America/New_York",

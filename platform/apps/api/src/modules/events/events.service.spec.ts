@@ -8,6 +8,7 @@ describe("EventsService", () => {
   const model: Event & { organization: Organization } = {
     id: "01990000-0000-7000-8000-000000000101",
     organizationId: "01990000-0000-7000-8000-000000000001",
+    externalId: null,
     name: "[DEV] Example Event",
     startTime: new Date("2030-01-12T23:00:00.000Z"),
     timezone: "America/New_York",
@@ -28,6 +29,7 @@ describe("EventsService", () => {
   const fight: Fight = {
     id: "01990000-0000-7000-8000-000000000201",
     eventId: model.id,
+    externalId: null,
     cardPosition: 1,
     redCornerName: "[DEV] Alex North",
     blueCornerName: "[DEV] Jordan Vale",

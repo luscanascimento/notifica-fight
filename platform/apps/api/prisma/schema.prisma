@@ -27,6 +27,7 @@ model Organization {
 model Event {
   id             String       @id @default(uuid()) @db.Uuid
   organizationId String       @db.Uuid
+  externalId     String?      @db.VarChar(64)
   name           String       @db.VarChar(200)
   startTime      DateTime     @db.Timestamptz(3)
   timezone       String       @db.VarChar(64)
@@ -39,6 +40,7 @@ model Event {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   fights         Fight[]
 
+  @@index([externalId])
   @@index([status, startTime])
   @@index([organizationId, startTime])
 }
@@ -46,6 +48,7 @@ model Event {
 model Fight {
   id             String   @id @default(uuid()) @db.Uuid
   eventId        String   @db.Uuid
+  externalId     String?  @db.VarChar(64)
   cardPosition   Int
   redCornerName  String   @db.VarChar(120)
   blueCornerName String   @db.VarChar(120)
@@ -55,6 +58,7 @@ model Fight {
   updatedAt      DateTime @updatedAt @db.Timestamptz(3)
   event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
+  @@index([externalId])
   @@unique([eventId, cardPosition])
 }
 

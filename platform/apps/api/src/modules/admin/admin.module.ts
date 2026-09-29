@@ -23,5 +23,6 @@ import { OidcTokenVerifier } from "./auth/oidc-token-verifier";
     AdminFightsService,
     AdminOrganizationsService,
   ],
+  exports: [AdminAuthGuard, OidcTokenVerifier],
 })
 export class AdminModule {}

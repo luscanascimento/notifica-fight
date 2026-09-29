@@ -14,6 +14,7 @@ describe("AdminFightsService", () => {
   const model: Fight = {
     id: "01990000-0000-7000-8000-000000000205",
     eventId: "01990000-0000-7000-8000-000000000101",
+    externalId: null,
     cardPosition: 3,
     redCornerName: "[DEV] Taylor North",
     blueCornerName: "[DEV] Cameron Vale",

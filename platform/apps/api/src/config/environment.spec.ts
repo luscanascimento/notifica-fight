@@ -8,6 +8,7 @@ const validEnvironment = {
   OIDC_AUDIENCE: "notifica-fight-api",
   OIDC_JWKS_URL: "https://identity.example.com/.well-known/jwks.json",
   OIDC_ADMIN_ROLE: "notifica-admin",
+  API_SPORTS_KEY: "test-key-for-ci",
 };
 
 describe("environment validation", () => {

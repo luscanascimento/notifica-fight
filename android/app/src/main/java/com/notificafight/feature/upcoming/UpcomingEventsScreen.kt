@@ -57,6 +57,7 @@ fun UpcomingEventsRoute(
     UpcomingEventsScreen(
         state = state,
         onRetry = viewModel::retry,
+        onRefresh = viewModel::retry,
         onEventClick = onEventClick,
         onOrganizationsClick = onOrganizationsClick,
         modifier = modifier,
@@ -68,6 +69,7 @@ fun UpcomingEventsRoute(
 fun UpcomingEventsScreen(
     state: UpcomingEventsUiState,
     onRetry: () -> Unit,
+    onRefresh: () -> Unit = onRetry,
     onEventClick: (String) -> Unit,
     onOrganizationsClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -84,6 +86,9 @@ fun UpcomingEventsScreen(
                     )
                 },
                 actions = {
+                    TextButton(onClick = onRefresh) {
+                        Text(stringResource(R.string.refresh_action))
+                    }
                     TextButton(onClick = onOrganizationsClick) {
                         Text(stringResource(R.string.organizations_action))
                     }

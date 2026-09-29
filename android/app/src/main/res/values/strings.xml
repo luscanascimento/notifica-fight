@@ -33,4 +33,16 @@
     <string name="empty_organizations_body">As organizações aparecerão aqui quando forem publicadas.</string>
     <string name="error_organizations_title">Não foi possível carregar as organizações</string>
     <string name="refresh_action">Atualizar</string>
+    <string name="settings_title">Configurações</string>
+    <string name="settings_action">Configurações</string>
+    <string name="app_version_label">Atualização do aplicativo</string>
+    <string name="app_version_format">Versão %s</string>
+    <string name="check_updates">Verificar atualizações</string>
+    <string name="check_updates_again">Verificar novamente</string>
+    <string name="check_updates_description">Verifique se há uma versão mais recente do Notifica Fight disponível para download.</string>
+    <string name="checking_updates">Verificando se há novas versões…</string>
+    <string name="app_up_to_date">Seu aplicativo já está na versão mais recente!</string>
+    <string name="update_available">Nova versão disponível: %s</string>
+    <string name="download_update">Baixar atualização</string>
+    <string name="update_error">Não foi possível verificar atualizações. Verifique sua conexão.</string>
 </resources>

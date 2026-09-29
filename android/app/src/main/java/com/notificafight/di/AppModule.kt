@@ -66,4 +66,8 @@ object AppModule {
     @Provides
     fun provideOrganizationApi(retrofit: Retrofit): OrganizationApi =
         retrofit.create(OrganizationApi::class.java)
+
+    @Provides
+    fun provideAppVersionApi(retrofit: Retrofit): com.notificafight.core.network.AppVersionApi =
+        retrofit.create(com.notificafight.core.network.AppVersionApi::class.java)
 }

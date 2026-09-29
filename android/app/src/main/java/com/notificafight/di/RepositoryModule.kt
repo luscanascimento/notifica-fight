@@ -1,7 +1,9 @@
 package com.notificafight.di
 
+import com.notificafight.data.AppVersionRepositoryImpl
 import com.notificafight.data.EventsRepositoryImpl
 import com.notificafight.data.OrganizationsRepositoryImpl
+import com.notificafight.domain.repository.AppVersionRepository
 import com.notificafight.domain.repository.EventsRepository
 import com.notificafight.domain.repository.OrganizationsRepository
 import dagger.Binds
@@ -21,4 +23,9 @@ abstract class RepositoryModule {
     abstract fun bindOrganizationsRepository(
         implementation: OrganizationsRepositoryImpl,
     ): OrganizationsRepository
+
+    @Binds
+    abstract fun bindAppVersionRepository(
+        implementation: AppVersionRepositoryImpl,
+    ): AppVersionRepository
 }

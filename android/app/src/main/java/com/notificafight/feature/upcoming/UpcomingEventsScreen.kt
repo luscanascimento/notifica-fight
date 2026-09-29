@@ -51,15 +51,16 @@ fun UpcomingEventsRoute(
     viewModel: UpcomingEventsViewModel,
     onEventClick: (String) -> Unit,
     onOrganizationsClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     UpcomingEventsScreen(
         state = state,
         onRetry = viewModel::retry,
-        onRefresh = viewModel::retry,
         onEventClick = onEventClick,
         onOrganizationsClick = onOrganizationsClick,
+        onSettingsClick = onSettingsClick,
         modifier = modifier,
     )
 }
@@ -69,9 +70,9 @@ fun UpcomingEventsRoute(
 fun UpcomingEventsScreen(
     state: UpcomingEventsUiState,
     onRetry: () -> Unit,
-    onRefresh: () -> Unit = onRetry,
     onEventClick: (String) -> Unit,
     onOrganizationsClick: () -> Unit,
+    onSettingsClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -86,11 +87,11 @@ fun UpcomingEventsScreen(
                     )
                 },
                 actions = {
-                    TextButton(onClick = onRefresh) {
-                        Text(stringResource(R.string.refresh_action))
-                    }
                     TextButton(onClick = onOrganizationsClick) {
                         Text(stringResource(R.string.organizations_action))
+                    }
+                    TextButton(onClick = onSettingsClick) {
+                        Text(stringResource(R.string.settings_action))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
